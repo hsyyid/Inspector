@@ -8,6 +8,7 @@ import io.github.hsyyid.inspector.cmdexecutors.ToggleInspectorExecutor;
 import io.github.hsyyid.inspector.listeners.PlayerBreakBlockListener;
 import io.github.hsyyid.inspector.listeners.PlayerInteractBlockListener;
 import io.github.hsyyid.inspector.listeners.PlayerPlaceBlockListener;
+import io.github.hsyyid.inspector.utilities.Region;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -35,6 +36,7 @@ public class Inspector
 	public static ConfigurationNode config;
 	public static ConfigurationLoader<CommentedConfigurationNode> configurationManager;
 	public static Set<UUID> inspectorEnabledPlayers = Sets.newHashSet();
+	public static Set<Region> regions = Sets.newHashSet();
 	
 	@Inject
 	private Logger logger;
@@ -71,6 +73,7 @@ public class Inspector
 				config.getNode("database", "mysql", "username").setValue("username");
 				config.getNode("database", "mysql", "password").setValue("pass");
 				config.getNode("database", "mysql", "database").setValue("Inspector");
+				config.getNode("inspector", "select", "tool").setValue("minecraft:diamond_hoe");
 				confManager.save(config);
 			}
 			configurationManager = confManager;

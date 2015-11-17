@@ -218,4 +218,47 @@ public class DatabaseManager
 
 		return blockInformation;
 	}
+	
+	public static void addPointOrCreateRegionOf(UUID playerUUID, Location<World> point, boolean secondary)
+	{
+		if(secondary)
+		{
+			for(Region region : Inspector.regions)
+			{
+				if(region.getOwner().equals(playerUUID))
+				{
+					region.setPointB(point);
+					return;
+				}
+			}
+			
+			Inspector.regions.add(new Region(playerUUID, null, point));
+		}
+		else
+		{
+			for(Region region : Inspector.regions)
+			{
+				if(region.getOwner().equals(playerUUID))
+				{
+					region.setPointA(point);
+					return;
+				}
+			}
+			
+			Inspector.regions.add(new Region(playerUUID, point, null));
+		}
+	}
+	
+	public static Optional<Region> getRegion(UUID playerUUID)
+	{
+		for(Region region : Inspector.regions)
+		{
+			if(region.getOwner().equals(playerUUID))
+			{
+				return Optional.of(region);
+			}
+		}
+		
+		return Optional.empty();
+	}
 }
