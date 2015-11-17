@@ -1,0 +1,221 @@
+package io.github.hsyyid.inspector.utilities;
+
+import com.google.common.collect.Lists;
+import io.github.hsyyid.inspector.Inspector;
+import ninja.leaping.configurate.ConfigurationNode;
+import org.spongepowered.api.service.sql.SqlService;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+public class DatabaseManager
+{
+	public static void updateBlockInformation(UUID worldUUID, int x, int y, int z, UUID playerUUID, String playerName, String time, String blockID, int meta)
+	{
+		if ((boolean) getConfigValue("database.mysql.enabled").orElse(false))
+		{
+			SqlService sql = Inspector.game.getServiceManager().provide(SqlService.class).get();
+			String host = (String) getConfigValue("database.mysql.host").orElse("");
+			String port = (String) getConfigValue("database.mysql.port").orElse("");
+			String username = (String) getConfigValue("database.mysql.username").orElse("");
+			String password = (String) getConfigValue("database.mysql.password").orElse("");
+			String database = (String) getConfigValue("database.mysql.database").orElse("");
+
+			try
+			{
+				DataSource datasource = sql.getDataSource("jdbc:mysql://" + host + ":" + port + "/" + database + "?user=" + username + "&password=" + password);
+
+				String executeString = "CREATE TABLE IF NOT EXISTS BLOCKINFO" +
+					"(X             INT       NOT NULL," +
+					" Y             INT       NOT NULL," +
+					" Z             INT       NOT NULL," +
+					" WORLDUUID     TEXT      NOT NULL," +
+					" PLAYERUUID    TEXT      NOT NULL," +
+					" PLAYERNAME    TEXT      NOT NULL," +
+					" TIME          TEXT      NOT NULL," + 
+					" BLOCKID       TEXT      NOT NULL," + 
+					" META          INT       NOT NULL)";
+				execute(executeString, datasource);
+
+				executeString = "INSERT INTO BLOCKINFO (X,Y,Z,WORLDUUID,PLAYERUUID,PLAYERNAME,TIME,BLOCKID,META) " +
+					"VALUES (" + x + "," + y + "," + z + ",'" + worldUUID.toString() + "','" + playerUUID.toString() + "',"
+					+ "'" + playerName + "','" + time + "','" + blockID + "'," + meta + ");"; 
+				execute(executeString, datasource);
+			}
+			catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			try
+			{
+				Class.forName("org.sqlite.JDBC");
+			}
+			catch(ClassNotFoundException e)
+			{
+				System.err.println("[Inspector]: Error! You do not have any database software installed. This plugin cannot work correctly!");
+				return;
+			}
+
+			try
+			{
+				Connection c = DriverManager.getConnection("jdbc:sqlite:Inspector.db");
+				Statement stmt = c.createStatement();
+
+				String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" +
+					"(X             INT       NOT NULL," +
+					" Y             INT       NOT NULL," +
+					" Z             INT       NOT NULL," +
+					" WORLDUUID     TEXT      NOT NULL," +
+					" PLAYERUUID    TEXT      NOT NULL," +
+					" PLAYERNAME    TEXT      NOT NULL," +
+					" TIME          TEXT      NOT NULL," + 
+					" BLOCKID       TEXT      NOT NULL," + 
+					" META          INT       NOT NULL)";
+				stmt.executeUpdate(sql);
+
+				sql = "INSERT INTO BLOCKINFO (X,Y,Z,WORLDUUID,PLAYERUUID,PLAYERNAME,TIME,BLOCKID,META) " +
+					"VALUES (" + x + "," + y + "," + z + ",'" + worldUUID.toString() + "','" + playerUUID.toString() + "',"
+					+ "'" + playerName + "','" + time + "','" + blockID + "'," + meta + ");"; 
+				stmt.executeUpdate(sql);
+
+				stmt.close();
+				c.close();
+			}
+			catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Executes commands on DataSources
+	 * @param execute - Command to execute
+	 * @param datasource - DataSource to execute command on.
+	 */
+	public static void execute(String execute, DataSource datasource)
+	{
+		try
+		{
+			Connection connection = datasource.getConnection();
+			Statement statement = connection.createStatement();
+			statement.execute(execute);
+			statement.close();
+			connection.close();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public static Optional<Object> getConfigValue(String configValue)
+	{
+		ConfigurationNode valueNode = Inspector.config.getNode((Object[]) (configValue).split("\\."));
+
+		if (valueNode.getValue() != null)
+		{
+			return Optional.of(valueNode.getValue());
+		}
+		else
+		{
+			return Optional.empty();
+		}
+	}
+
+	public static List<BlockInformation> getBlockInformationAt(Location<World> location)
+	{
+		List<BlockInformation> blockInformation = Lists.newArrayList();
+
+		if ((boolean) getConfigValue("database.mysql.enabled").orElse(false))
+		{
+			SqlService sql = Inspector.game.getServiceManager().provide(SqlService.class).get();
+			String host = (String) getConfigValue("database.mysql.host").orElse("");
+			String port = (String) getConfigValue("database.mysql.port").orElse("");
+			String username = (String) getConfigValue("database.mysql.username").orElse("");
+			String password = (String) getConfigValue("database.mysql.password").orElse("");
+			String database = (String) getConfigValue("database.mysql.database").orElse("");
+
+			try
+			{
+				DataSource datasource = sql.getDataSource("jdbc:mysql://" + host + ":" + port + "/" + database + "?user=" + username + "&password=" + password);
+
+				DatabaseMetaData metadata = datasource.getConnection().getMetaData();
+				ResultSet rs = metadata.getTables(null, null, "BLOCKINFO", null);
+
+				while (rs.next())
+				{
+					int x = rs.getInt("x");
+					int y = rs.getInt("y");
+					int z = rs.getInt("z");
+					UUID worldUUID = UUID.fromString(rs.getString("worldUUID"));
+					Optional<World> world = Inspector.game.getServer().getWorld(worldUUID);
+
+					if(x == location.getBlockX() && y == location.getBlockY() && z == location.getBlockZ() && worldUUID.equals(location.getExtent().getUniqueId()) && world.isPresent())
+					{
+						blockInformation.add(new BlockInformation(new Location<World>(world.get(), x, y, z), rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta")));
+					}
+				}
+
+
+			}
+			catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			try
+			{
+				Class.forName("org.sqlite.JDBC");
+			}
+			catch(ClassNotFoundException e)
+			{
+				System.err.println("[Inspector]: Error! You do not have any database software installed. This plugin cannot work correctly!");
+				return blockInformation;
+			}
+
+			try
+			{
+				Connection c = DriverManager.getConnection("jdbc:sqlite:Inspector.db");
+				PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE x=? AND y=? AND z=? AND worldUUID=?");
+				stmt.setInt(1, location.getBlockX());
+				stmt.setInt(2, location.getBlockY());
+				stmt.setInt(3, location.getBlockZ());
+				stmt.setString(4, location.getExtent().getUniqueId().toString());
+
+				ResultSet rs = stmt.executeQuery();
+
+				while (rs.next()) 
+				{
+					blockInformation.add(new BlockInformation(location, rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta")));
+				}
+
+				stmt.close();
+				c.close();
+			}
+			catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+
+		return blockInformation;
+	}
+}
