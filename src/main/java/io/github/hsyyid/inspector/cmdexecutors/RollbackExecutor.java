@@ -48,21 +48,22 @@ public class RollbackExecutor implements CommandExecutor
 						for (Location<World> block : blocks)
 						{
 							revertBlock(player, block, targetPlayer);
+							player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Rollback completed."));
 						}
 					}
 					else
 					{
-						src.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may do a rollback for a region in two different worlds."));
+						player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may do a rollback for a region in two different worlds."));
 					}
 				}
 				else
 				{
-					src.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You are missing one or more points for your region."));
+					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You are missing one or more points for your region."));
 				}
 			}
 			else
 			{
-				src.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You have not selected a region yet."));
+				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You have not selected a region yet."));
 			}
 		}
 		else
