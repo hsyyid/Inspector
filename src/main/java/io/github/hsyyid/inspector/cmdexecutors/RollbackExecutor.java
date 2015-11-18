@@ -77,12 +77,10 @@ public class RollbackExecutor implements CommandExecutor
 	{
 		if (targetPlayer.isPresent())
 		{
-			List<BlockInformation> blockInformation = DatabaseManager.getBlockInformationAt(location, targetPlayer.get());
+			BlockInformation blockInfo = DatabaseManager.getBlockInformationAt(location, targetPlayer.get());
 
-			if (blockInformation.size() != 0)
+			if (blockInfo != null)
 			{
-				BlockInformation blockInfo = blockInformation.get(0);
-
 				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).isPresent())
 				{
 					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).get();
