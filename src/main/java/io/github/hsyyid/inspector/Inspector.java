@@ -97,8 +97,9 @@ public class Inspector
 		inspectorSubcommands.put(Arrays.asList("rollback"), CommandSpec.builder()
 	 		.description(Texts.of("Rollback Command"))
 			.permission("inspector.rollback")
-			.arguments(GenericArguments.optional(
-				GenericArguments.onlyOne(GenericArguments.string(Texts.of("player")))))
+			.arguments(GenericArguments.seq(
+				GenericArguments.onlyOne(GenericArguments.string(Texts.of("time"))),
+				GenericArguments.optional(GenericArguments.onlyOne(GenericArguments.string(Texts.of("player"))))))
 	 		.executor(new RollbackExecutor())
 	 		.build());
 

@@ -61,12 +61,12 @@ public class PlayerInteractBlockListener
 		if (event.getCause().first(Player.class).isPresent())
 		{
 			Player player = (Player) event.getCause().first(Player.class).get();
-			
+
 			if (player.hasPermission("inspector.region.use") && player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) DatabaseManager.getConfigValue("inspector.select.tool").orElse("")))
 			{
 				Location<World> pointA = event.getTargetBlock().getLocation().get();
 				DatabaseManager.addPointOrCreateRegionOf(player.getUniqueId(), pointA, false);
-				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position A to ", TextColors.GOLD, "(" + pointA.getBlockX() + ", " + pointA.getBlockY() + ", "  + pointA.getBlockZ() + ")"));
+				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position A to ", TextColors.GOLD, "(" + pointA.getBlockX() + ", " + pointA.getBlockY() + ", " + pointA.getBlockZ() + ")"));
 				event.setCancelled(true);
 			}
 		}
@@ -83,7 +83,7 @@ public class PlayerInteractBlockListener
 			{
 				Location<World> pointB = event.getTargetBlock().getLocation().get();
 				DatabaseManager.addPointOrCreateRegionOf(player.getUniqueId(), pointB, true);
-				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position B to ", TextColors.GOLD, "(" + pointB.getBlockX() + ", " + pointB.getBlockY() + ", "  + pointB.getBlockZ() + ")"));
+				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position B to ", TextColors.GOLD, "(" + pointB.getBlockX() + ", " + pointB.getBlockY() + ", " + pointB.getBlockZ() + ")"));
 				event.setCancelled(true);
 			}
 		}

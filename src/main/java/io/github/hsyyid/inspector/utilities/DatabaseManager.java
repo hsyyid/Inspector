@@ -120,42 +120,131 @@ public class DatabaseManager
 		}
 	}
 
-	public static BlockInformation getBlockInformationAt(Location<World> location, String player)
-	{	
+	public static BlockInformation getBlockInformationAt(Location<World> location, String player, String timeInGMT)
+	{
 		BlockInformation lastPlayerEditedBlock = null;
 		BlockInformation blockToRevertTo = null;
-		List<BlockInformation> blockInformation = getBlockInformationAt(location);
-		
-		for(BlockInformation blockInfo : blockInformation)
+		List<BlockInformation> blockInformation = getBlockInformationAt(location, timeInGMT);
+
+		for (BlockInformation blockInfo : blockInformation)
 		{
-			if(blockInfo.getPlayerName().equals(player))
+			if (blockInfo.getPlayerName().equals(player))
 			{
-				if(lastPlayerEditedBlock != null && wasChangedBefore(blockInfo, lastPlayerEditedBlock))
+				if (lastPlayerEditedBlock != null && wasChangedBefore(lastPlayerEditedBlock, blockInfo) && wasChangedBefore(blockInfo, timeInGMT))
 				{
 					lastPlayerEditedBlock = blockInfo;
 				}
-				else
+				else if (wasChangedBefore(blockInfo, timeInGMT))
 				{
 					lastPlayerEditedBlock = blockInfo;
 				}
 			}
 		}
-		
-		for(BlockInformation blockInfo : blockInformation)
+
+		for (BlockInformation blockInfo : blockInformation)
 		{
-			if(!blockInfo.getPlayerName().equals(player))
+			if (!blockInfo.getPlayerName().equals(player))
 			{
-				if(lastPlayerEditedBlock != null && wasChangedBefore(blockInfo, lastPlayerEditedBlock))
+				if (blockToRevertTo != null && lastPlayerEditedBlock != null && wasChangedBefore(blockInfo, lastPlayerEditedBlock) && wasChangedBefore(blockToRevertTo, blockInfo))
 				{
 					blockToRevertTo = blockInfo;
-					break;
+				}
+				else if (lastPlayerEditedBlock != null && wasChangedBefore(blockInfo, lastPlayerEditedBlock))
+				{
+					blockToRevertTo = blockInfo;
 				}
 			}
 		}
-		
+
 		return blockToRevertTo;
 	}
-	
+
+	public static List<BlockInformation> getBlockInformationAt(Location<World> location, String timeInGMT)
+	{
+		List<BlockInformation> blockInformation = Lists.newArrayList();
+
+		if ((boolean) getConfigValue("database.mysql.enabled").orElse(false))
+		{
+			SqlService sql = Inspector.game.getServiceManager().provide(SqlService.class).get();
+			String host = (String) getConfigValue("database.mysql.host").orElse("");
+			String port = (String) getConfigValue("database.mysql.port").orElse("");
+			String username = (String) getConfigValue("database.mysql.username").orElse("");
+			String password = (String) getConfigValue("database.mysql.password").orElse("");
+			String database = (String) getConfigValue("database.mysql.database").orElse("");
+
+			try
+			{
+				DataSource datasource = sql.getDataSource("jdbc:mysql://" + host + ":" + port + "/" + database + "?user=" + username + "&password=" + password);
+
+				DatabaseMetaData metadata = datasource.getConnection().getMetaData();
+				ResultSet rs = metadata.getTables(null, null, "BLOCKINFO", null);
+
+				while (rs.next())
+				{
+					int x = rs.getInt("x");
+					int y = rs.getInt("y");
+					int z = rs.getInt("z");
+					UUID worldUUID = UUID.fromString(rs.getString("worldUUID"));
+					Optional<World> world = Inspector.game.getServer().getWorld(worldUUID);
+
+					if (x == location.getBlockX() && y == location.getBlockY() && z == location.getBlockZ() && worldUUID.equals(location.getExtent().getUniqueId()) && world.isPresent())
+					{
+						BlockInformation blockInfo = new BlockInformation(new Location<World>(world.get(), x, y, z), rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta"));
+
+						if (wasChangedBefore(blockInfo, timeInGMT))
+							blockInformation.add(blockInfo);
+					}
+				}
+
+			}
+			catch (SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			try
+			{
+				Class.forName("org.sqlite.JDBC");
+			}
+			catch (ClassNotFoundException e)
+			{
+				System.err.println("[Inspector]: Error! You do not have any database software installed. This plugin cannot work correctly!");
+				return blockInformation;
+			}
+
+			try
+			{
+				Connection c = DriverManager.getConnection("jdbc:sqlite:Inspector.db");
+				PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE x=? AND y=? AND z=? AND worldUUID=?");
+				stmt.setInt(1, location.getBlockX());
+				stmt.setInt(2, location.getBlockY());
+				stmt.setInt(3, location.getBlockZ());
+				stmt.setString(4, location.getExtent().getUniqueId().toString());
+
+				ResultSet rs = stmt.executeQuery();
+
+				while (rs.next())
+				{
+					BlockInformation blockInfo = new BlockInformation(location, rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta"));
+
+					if (wasChangedBefore(blockInfo, timeInGMT))
+						blockInformation.add(blockInfo);
+				}
+
+				stmt.close();
+				c.close();
+			}
+			catch (SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+
+		return blockInformation;
+	}
+
 	public static List<BlockInformation> getBlockInformationAt(Location<World> location)
 	{
 		List<BlockInformation> blockInformation = Lists.newArrayList();
@@ -287,6 +376,23 @@ public class DatabaseManager
 			format.setTimeZone(TimeZone.getTimeZone("GMT"));
 			Date blockInfoATime = format.parse(blockInformationA.getTimeEdited());
 			Date blockInfoBTime = format.parse(blockInformationB.getTimeEdited());
+			long duration = blockInfoBTime.getTime() - blockInfoATime.getTime();
+			return duration >= 0;
+		}
+		catch (ParseException e)
+		{
+			return false;
+		}
+	}
+
+	public static boolean wasChangedBefore(BlockInformation blockInformationA, String timeInGMT)
+	{
+		try
+		{
+			SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+			format.setTimeZone(TimeZone.getTimeZone("GMT"));
+			Date blockInfoATime = format.parse(blockInformationA.getTimeEdited());
+			Date blockInfoBTime = format.parse(timeInGMT);
 			long duration = blockInfoBTime.getTime() - blockInfoATime.getTime();
 			return duration >= 0;
 		}
