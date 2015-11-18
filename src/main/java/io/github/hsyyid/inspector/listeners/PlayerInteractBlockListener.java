@@ -62,7 +62,7 @@ public class PlayerInteractBlockListener
 		{
 			Player player = (Player) event.getCause().first(Player.class).get();
 			
-			if (player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) DatabaseManager.getConfigValue("inspector.select.tool").orElse("")))
+			if (player.hasPermission("inspector.region.use") && player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) DatabaseManager.getConfigValue("inspector.select.tool").orElse("")))
 			{
 				Location<World> pointA = event.getTargetBlock().getLocation().get();
 				DatabaseManager.addPointOrCreateRegionOf(player.getUniqueId(), pointA, false);
@@ -79,7 +79,7 @@ public class PlayerInteractBlockListener
 		{
 			Player player = (Player) event.getCause().first(Player.class).get();
 
-			if (player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) DatabaseManager.getConfigValue("inspector.select.tool").orElse("")))
+			if (player.hasPermission("inspector.region.use") && player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) DatabaseManager.getConfigValue("inspector.select.tool").orElse("")))
 			{
 				Location<World> pointB = event.getTargetBlock().getLocation().get();
 				DatabaseManager.addPointOrCreateRegionOf(player.getUniqueId(), pointB, true);

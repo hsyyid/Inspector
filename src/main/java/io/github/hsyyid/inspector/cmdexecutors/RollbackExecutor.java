@@ -27,6 +27,8 @@ public class RollbackExecutor implements CommandExecutor
 {
 	public CommandResult execute(CommandSource src, CommandContext ctx) throws CommandException
 	{
+		Optional<String> targetPlayer = ctx.<String> getOne("player");
+
 		if (src instanceof Player)
 		{
 			Player player = (Player) src;
@@ -45,7 +47,7 @@ public class RollbackExecutor implements CommandExecutor
 
 						for (Location<World> block : blocks)
 						{
-							revertBlock(player, block);
+							revertBlock(player, block, targetPlayer);
 						}
 					}
 					else
@@ -71,37 +73,61 @@ public class RollbackExecutor implements CommandExecutor
 		return CommandResult.success();
 	}
 
-	public void revertBlock(Player player, Location<World> location)
+	public void revertBlock(Player player, Location<World> location, Optional<String> targetPlayer)
 	{
-		List<BlockInformation> blockInformation = DatabaseManager.getBlockInformationAt(location);
-
-		if (blockInformation.size() != 0)
+		if (targetPlayer.isPresent())
 		{
-			BlockInformation blockInfo = blockInformation.get(0);
+			List<BlockInformation> blockInformation = DatabaseManager.getBlockInformationAt(location, targetPlayer.get());
 
-			if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).isPresent())
+			if (blockInformation.size() != 0)
 			{
-				BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).get();
-				BlockState blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build();
+				BlockInformation blockInfo = blockInformation.get(0);
 
-				if (blockInfo.getMeta() != -1)
+				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).isPresent())
 				{
-					DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getMeta());
-					blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
+					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).get();
+					BlockState blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build();
+
+					if (blockInfo.getMeta() != -1)
+					{
+						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getMeta());
+						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
+					}
+
+					blockInfo.getLocation().setBlock(blockState);
 				}
-
-				blockInfo.getLocation().setBlock(blockState);
-
-				// player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Reverted this block to its previous state at " + blockInfo.getTimeEdited()));
-			}
-			else
-			{
-				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "Block could not be recreated!"));
+				else
+				{
+					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "Block could not be recreated!"));
+				}
 			}
 		}
 		else
 		{
-			// player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "No data found for this block."));
+			List<BlockInformation> blockInformation = DatabaseManager.getBlockInformationAt(location);
+
+			if (blockInformation.size() != 0)
+			{
+				BlockInformation blockInfo = blockInformation.get(0);
+
+				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).isPresent())
+				{
+					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).get();
+					BlockState blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build();
+
+					if (blockInfo.getMeta() != -1)
+					{
+						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getMeta());
+						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
+					}
+
+					blockInfo.getLocation().setBlock(blockState);
+				}
+				else
+				{
+					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "Block could not be recreated!"));
+				}
+			}
 		}
 	}
 }

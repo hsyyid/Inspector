@@ -219,6 +219,88 @@ public class DatabaseManager
 		return blockInformation;
 	}
 	
+	public static List<BlockInformation> getBlockInformationAt(Location<World> location, String user)
+	{
+		List<BlockInformation> blockInformation = Lists.newArrayList();
+
+		if ((boolean) getConfigValue("database.mysql.enabled").orElse(false))
+		{
+			SqlService sql = Inspector.game.getServiceManager().provide(SqlService.class).get();
+			String host = (String) getConfigValue("database.mysql.host").orElse("");
+			String port = (String) getConfigValue("database.mysql.port").orElse("");
+			String username = (String) getConfigValue("database.mysql.username").orElse("");
+			String password = (String) getConfigValue("database.mysql.password").orElse("");
+			String database = (String) getConfigValue("database.mysql.database").orElse("");
+
+			try
+			{
+				DataSource datasource = sql.getDataSource("jdbc:mysql://" + host + ":" + port + "/" + database + "?user=" + username + "&password=" + password);
+
+				DatabaseMetaData metadata = datasource.getConnection().getMetaData();
+				ResultSet rs = metadata.getTables(null, null, "BLOCKINFO", null);
+
+				while (rs.next())
+				{
+					int x = rs.getInt("x");
+					int y = rs.getInt("y");
+					int z = rs.getInt("z");
+					UUID worldUUID = UUID.fromString(rs.getString("worldUUID"));
+					Optional<World> world = Inspector.game.getServer().getWorld(worldUUID);
+
+					if(x == location.getBlockX() && y == location.getBlockY() && z == location.getBlockZ() && worldUUID.equals(location.getExtent().getUniqueId()) && world.isPresent() && rs.getString("playerName").equals(user))
+					{
+						blockInformation.add(new BlockInformation(new Location<World>(world.get(), x, y, z), rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta")));
+					}
+				}
+
+
+			}
+			catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			try
+			{
+				Class.forName("org.sqlite.JDBC");
+			}
+			catch(ClassNotFoundException e)
+			{
+				System.err.println("[Inspector]: Error! You do not have any database software installed. This plugin cannot work correctly!");
+				return blockInformation;
+			}
+
+			try
+			{
+				Connection c = DriverManager.getConnection("jdbc:sqlite:Inspector.db");
+				PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE x=? AND y=? AND z=? AND worldUUID=? AND playerName=?");
+				stmt.setInt(1, location.getBlockX());
+				stmt.setInt(2, location.getBlockY());
+				stmt.setInt(3, location.getBlockZ());
+				stmt.setString(4, location.getExtent().getUniqueId().toString());
+				stmt.setString(5, user);
+
+				ResultSet rs = stmt.executeQuery();
+
+				while (rs.next()) 
+				{
+					blockInformation.add(new BlockInformation(location, rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta")));
+				}
+
+				stmt.close();
+				c.close();
+			}
+			catch(SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}
+
+		return blockInformation;
+	}
+	
 	public static void addPointOrCreateRegionOf(UUID playerUUID, Location<World> point, boolean secondary)
 	{
 		if(secondary)

@@ -19,6 +19,7 @@ import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.service.config.DefaultConfig;
 import org.spongepowered.api.text.Texts;
+import org.spongepowered.api.util.command.args.GenericArguments;
 import org.spongepowered.api.util.command.spec.CommandSpec;
 
 import java.io.File;
@@ -96,6 +97,8 @@ public class Inspector
 		inspectorSubcommands.put(Arrays.asList("rollback"), CommandSpec.builder()
 	 		.description(Texts.of("Rollback Command"))
 			.permission("inspector.rollback")
+			.arguments(GenericArguments.optional(
+				GenericArguments.onlyOne(GenericArguments.string(Texts.of("player")))))
 	 		.executor(new RollbackExecutor())
 	 		.build());
 
