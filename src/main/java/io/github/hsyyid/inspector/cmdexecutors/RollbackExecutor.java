@@ -92,14 +92,14 @@ public class RollbackExecutor implements CommandExecutor
 
 			if (blockInfo != null)
 			{
-				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).isPresent())
+				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
 				{
-					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).get();
+					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
 					BlockState blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build();
 
-					if (blockInfo.getMeta() != -1)
+					if (blockInfo.getOldMeta() != -1)
 					{
-						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getMeta());
+						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getOldMeta());
 						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
 					}
 
@@ -117,11 +117,12 @@ public class RollbackExecutor implements CommandExecutor
 
 			if (blockInformation.size() != 0)
 			{
+				//Gets the most recent change before this block.
 				BlockInformation blockInfo = null;
 				
 				for (BlockInformation block : blockInformation)
 				{
-					if(blockInfo != null && DatabaseManager.wasChangedBefore(block, timeInGMT) && DatabaseManager.wasChangedBefore(block, blockInfo))
+					if(blockInfo != null && DatabaseManager.wasChangedBefore(block, timeInGMT) && DatabaseManager.wasChangedBefore(blockInfo, block))
 					{
 						blockInfo = block;
 					}
@@ -131,14 +132,14 @@ public class RollbackExecutor implements CommandExecutor
 					}
 				}
 				
-				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).isPresent())
+				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
 				{
-					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getBlockID()).get();
+					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
 					BlockState blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build();
 
-					if (blockInfo.getMeta() != -1)
+					if (blockInfo.getOldMeta() != -1)
 					{
-						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getMeta());
+						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getOldMeta());
 						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
 					}
 

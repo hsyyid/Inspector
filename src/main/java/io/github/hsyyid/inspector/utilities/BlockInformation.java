@@ -8,25 +8,29 @@ import java.util.UUID;
 public class BlockInformation
 {
 	private Location<World> location;
-	private String blockID;
+	private String newBlockID;
+	private int newMeta;
+	private String oldBlockID;
+	private int oldMeta;
 	private String timeEdited;
 	private UUID playerUUID;
 	private String playerName;
-	private int meta;
 	
-	public BlockInformation(Location<World> location, String blockID, String timeEdited, UUID playerUUID, String playerName, int meta)
+	public BlockInformation(Location<World> location, String newBlockID, int newMeta, String oldBlockID, int oldMeta, String timeEdited, UUID playerUUID, String playerName)
 	{
 		this.location = location;
-		this.blockID = blockID;
+		this.newBlockID = newBlockID;
+		this.newMeta = newMeta;
+		this.oldBlockID = oldBlockID;
+		this.oldMeta = oldMeta;
 		this.timeEdited = timeEdited;
 		this.playerUUID = playerUUID;
 		this.playerName = playerName;
-		this.meta = meta;
 	}
 	
 	public void setBlockID(String blockID)
 	{
-		this.blockID = blockID;
+		this.oldBlockID = blockID;
 	}
 	
 	public void setLocation(Location<World> location)
@@ -51,12 +55,27 @@ public class BlockInformation
 	
 	public void setMeta(int meta)
 	{
-		this.meta = meta;
+		this.oldMeta = meta;
 	}
 	
-	public String getBlockID()
+	public String getNewBlockID()
 	{
-		return blockID;
+		return newBlockID;
+	}
+	
+	public int getNewMeta()
+	{
+		return newMeta;
+	}
+	
+	public String getOldBlockID()
+	{
+		return oldBlockID;
+	}
+	
+	public int getOldMeta()
+	{
+		return oldMeta;
 	}
 	
 	public Location<World> getLocation()
@@ -77,10 +96,5 @@ public class BlockInformation
 	public String getTimeEdited()
 	{
 		return timeEdited;
-	}
-	
-	public int getMeta()
-	{
-		return meta;
 	}
 }

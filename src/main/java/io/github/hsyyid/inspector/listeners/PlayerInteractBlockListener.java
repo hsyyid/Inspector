@@ -35,7 +35,7 @@ public class PlayerInteractBlockListener
 
 				for (BlockInformation blockInfo : information)
 				{
-					String blockID = blockInfo.getBlockID();
+					String blockID = blockInfo.getNewBlockID();
 					String playerName = blockInfo.getPlayerName();
 					UUID playerUUID = blockInfo.getPlayerUUID();
 					String timeEdited = blockInfo.getTimeEdited();
@@ -45,8 +45,8 @@ public class PlayerInteractBlockListener
 					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "UUID of Player Edited: ", TextColors.GOLD, playerUUID.toString()));
 					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited));
 					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block ID: ", TextColors.GOLD, blockID));
-					if (blockInfo.getMeta() != -1)
-						player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block Meta: ", TextColors.GOLD, blockInfo.getMeta()));
+					if (blockInfo.getNewMeta() != -1)
+						player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block Meta: ", TextColors.GOLD, blockInfo.getNewMeta()));
 					player.sendMessage(Texts.of(TextColors.GRAY, "-------------------------"));
 				}
 

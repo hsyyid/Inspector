@@ -26,7 +26,7 @@ import javax.sql.DataSource;
 
 public class DatabaseManager
 {
-	public static void updateBlockInformation(UUID worldUUID, int x, int y, int z, UUID playerUUID, String playerName, String time, String blockID, int meta)
+	public static void updateBlockInformation(UUID worldUUID, int x, int y, int z, UUID playerUUID, String playerName, String time, String newBlockID, int newBlockMeta, String oldBlockID, int oldBlockMeta)
 	{
 		if ((boolean) getConfigValue("database.mysql.enabled").orElse(false))
 		{
@@ -41,10 +41,23 @@ public class DatabaseManager
 			{
 				DataSource datasource = sql.getDataSource("jdbc:mysql://" + host + ":" + port + "/" + database + "?user=" + username + "&password=" + password);
 
-				String executeString = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + "(X             INT       NOT NULL," + " Y             INT       NOT NULL," + " Z             INT       NOT NULL," + " WORLDUUID     TEXT      NOT NULL," + " PLAYERUUID    TEXT      NOT NULL," + " PLAYERNAME    TEXT      NOT NULL," + " TIME          TEXT      NOT NULL," + " BLOCKID       TEXT      NOT NULL," + " META          INT       NOT NULL)";
+				String executeString = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + 
+									"(X             INT       NOT NULL," + 
+									" Y             INT       NOT NULL," +
+									" Z             INT       NOT NULL," + 
+									" WORLDUUID     TEXT      NOT NULL," +
+									" PLAYERUUID    TEXT      NOT NULL," + 
+									" PLAYERNAME    TEXT      NOT NULL," +
+									" TIME          TEXT      NOT NULL," +
+									" NEWBLOCKID    TEXT      NOT NULL," +
+									" NEWMETA       INT       NOT NULL," +
+									" OLDBLOCKID    TEXT      NOT NULL," +
+									" OLDMETA 		INT 	  NOT NULL)";
 				execute(executeString, datasource);
 
-				executeString = "INSERT INTO BLOCKINFO (X,Y,Z,WORLDUUID,PLAYERUUID,PLAYERNAME,TIME,BLOCKID,META) " + "VALUES (" + x + "," + y + "," + z + ",'" + worldUUID.toString() + "','" + playerUUID.toString() + "'," + "'" + playerName + "','" + time + "','" + blockID + "'," + meta + ");";
+				executeString = "INSERT INTO BLOCKINFO (X,Y,Z,WORLDUUID,PLAYERUUID,PLAYERNAME,TIME,NEWBLOCKID,NEWMETA,OLDBLOCKID,OLDMETA) " +
+							"VALUES (" + x + "," + y + "," + z + ",'" + worldUUID.toString() + "','" + playerUUID.toString() + "'," +
+							"'" + playerName + "','" + time + "','" + newBlockID + "'," + newBlockMeta + ",'" + oldBlockID + "'," + oldBlockMeta + ");";
 				execute(executeString, datasource);
 			}
 			catch (SQLException e)
@@ -69,10 +82,23 @@ public class DatabaseManager
 				Connection c = DriverManager.getConnection("jdbc:sqlite:Inspector.db");
 				Statement stmt = c.createStatement();
 
-				String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + "(X             INT       NOT NULL," + " Y             INT       NOT NULL," + " Z             INT       NOT NULL," + " WORLDUUID     TEXT      NOT NULL," + " PLAYERUUID    TEXT      NOT NULL," + " PLAYERNAME    TEXT      NOT NULL," + " TIME          TEXT      NOT NULL," + " BLOCKID       TEXT      NOT NULL," + " META          INT       NOT NULL)";
+				String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + 
+					"(X             INT       NOT NULL," + 
+					" Y             INT       NOT NULL," +
+					" Z             INT       NOT NULL," + 
+					" WORLDUUID     TEXT      NOT NULL," +
+					" PLAYERUUID    TEXT      NOT NULL," + 
+					" PLAYERNAME    TEXT      NOT NULL," +
+					" TIME          TEXT      NOT NULL," +
+					" NEWBLOCKID    TEXT      NOT NULL," +
+					" NEWMETA       INT       NOT NULL," +
+					" OLDBLOCKID    TEXT      NOT NULL," +
+					" OLDMETA 		INT 	  NOT NULL)";
 				stmt.executeUpdate(sql);
 
-				sql = "INSERT INTO BLOCKINFO (X,Y,Z,WORLDUUID,PLAYERUUID,PLAYERNAME,TIME,BLOCKID,META) " + "VALUES (" + x + "," + y + "," + z + ",'" + worldUUID.toString() + "','" + playerUUID.toString() + "'," + "'" + playerName + "','" + time + "','" + blockID + "'," + meta + ");";
+				sql = "INSERT INTO BLOCKINFO (X,Y,Z,WORLDUUID,PLAYERUUID,PLAYERNAME,TIME,NEWBLOCKID,NEWMETA,OLDBLOCKID,OLDMETA) " +
+					"VALUES (" + x + "," + y + "," + z + ",'" + worldUUID.toString() + "','" + playerUUID.toString() + "'," +
+					"'" + playerName + "','" + time + "','" + newBlockID + "'," + newBlockMeta + ",'" + oldBlockID + "'," + oldBlockMeta + ");";
 				stmt.executeUpdate(sql);
 
 				stmt.close();
@@ -123,7 +149,6 @@ public class DatabaseManager
 	public static BlockInformation getBlockInformationAt(Location<World> location, String player, String timeInGMT)
 	{
 		BlockInformation lastPlayerEditedBlock = null;
-		BlockInformation blockToRevertTo = null;
 		List<BlockInformation> blockInformation = getBlockInformationAt(location, timeInGMT);
 
 		for (BlockInformation blockInfo : blockInformation)
@@ -141,22 +166,7 @@ public class DatabaseManager
 			}
 		}
 
-		for (BlockInformation blockInfo : blockInformation)
-		{
-			if (!blockInfo.getPlayerName().equals(player))
-			{
-				if (blockToRevertTo != null && lastPlayerEditedBlock != null && wasChangedBefore(blockInfo, lastPlayerEditedBlock) && wasChangedBefore(blockToRevertTo, blockInfo))
-				{
-					blockToRevertTo = blockInfo;
-				}
-				else if (lastPlayerEditedBlock != null && wasChangedBefore(blockInfo, lastPlayerEditedBlock))
-				{
-					blockToRevertTo = blockInfo;
-				}
-			}
-		}
-
-		return blockToRevertTo;
+		return lastPlayerEditedBlock;
 	}
 
 	public static List<BlockInformation> getBlockInformationAt(Location<World> location, String timeInGMT)
@@ -189,7 +199,7 @@ public class DatabaseManager
 
 					if (x == location.getBlockX() && y == location.getBlockY() && z == location.getBlockZ() && worldUUID.equals(location.getExtent().getUniqueId()) && world.isPresent())
 					{
-						BlockInformation blockInfo = new BlockInformation(new Location<World>(world.get(), x, y, z), rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta"));
+						BlockInformation blockInfo = new BlockInformation(new Location<World>(world.get(), x, y, z), rs.getString("newBlockID"), rs.getInt("newMeta"), rs.getString("oldBlockID"), rs.getInt("oldMeta"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"));
 
 						if (wasChangedBefore(blockInfo, timeInGMT))
 							blockInformation.add(blockInfo);
@@ -227,7 +237,7 @@ public class DatabaseManager
 
 				while (rs.next())
 				{
-					BlockInformation blockInfo = new BlockInformation(location, rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta"));
+					BlockInformation blockInfo = new BlockInformation(location, rs.getString("newBlockID"), rs.getInt("newMeta"), rs.getString("oldBlockID"), rs.getInt("oldMeta"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"));
 
 					if (wasChangedBefore(blockInfo, timeInGMT))
 						blockInformation.add(blockInfo);
@@ -275,7 +285,7 @@ public class DatabaseManager
 
 					if (x == location.getBlockX() && y == location.getBlockY() && z == location.getBlockZ() && worldUUID.equals(location.getExtent().getUniqueId()) && world.isPresent())
 					{
-						blockInformation.add(new BlockInformation(new Location<World>(world.get(), x, y, z), rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta")));
+						blockInformation.add(new BlockInformation(new Location<World>(world.get(), x, y, z), rs.getString("newBlockID"), rs.getInt("newMeta"), rs.getString("oldBlockID"), rs.getInt("oldMeta"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName")));
 					}
 				}
 
@@ -310,7 +320,7 @@ public class DatabaseManager
 
 				while (rs.next())
 				{
-					blockInformation.add(new BlockInformation(location, rs.getString("blockID"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName"), rs.getInt("meta")));
+					blockInformation.add(new BlockInformation(location, rs.getString("newBlockID"), rs.getInt("newMeta"), rs.getString("oldBlockID"), rs.getInt("oldMeta"), rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName")));
 				}
 
 				stmt.close();
