@@ -159,7 +159,7 @@ public class DatabaseManager
 				{
 					lastPlayerEditedBlock = blockInfo;
 				}
-				else if (wasChangedBefore(blockInfo, timeInGMT))
+				else if (lastPlayerEditedBlock == null && wasChangedBefore(blockInfo, timeInGMT))
 				{
 					lastPlayerEditedBlock = blockInfo;
 				}
