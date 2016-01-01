@@ -1,1 +1,0 @@
-Inspector is a Sponge plugin made by HassanS6000.
