@@ -7,7 +7,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.text.Texts;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
 public class ToggleInspectorExecutor implements CommandExecutor
@@ -21,17 +21,17 @@ public class ToggleInspectorExecutor implements CommandExecutor
 			if (Inspector.inspectorEnabledPlayers.contains(player.getUniqueId()))
 			{
 				Inspector.inspectorEnabledPlayers.remove(player.getUniqueId());
-				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Toggled inspector ", TextColors.GOLD, "off."));
+				player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Toggled inspector ", TextColors.GOLD, "off."));
 			}
 			else
 			{
 				Inspector.inspectorEnabledPlayers.add(player.getUniqueId());
-				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Toggled inspector ", TextColors.GOLD, "on."));
+				player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Toggled inspector ", TextColors.GOLD, "on."));
 			}
 		}
 		else
 		{
-			src.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may only use this command as an in-game player."));
+			src.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may only use this command as an in-game player."));
 		}
 
 		return CommandResult.success();

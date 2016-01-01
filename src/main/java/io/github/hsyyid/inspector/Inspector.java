@@ -22,7 +22,7 @@ import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.plugin.Plugin;
-import org.spongepowered.api.text.Texts;
+import org.spongepowered.api.text.Text;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Plugin(id = "Inspector", name = "Inspector", version = "0.1")
+@Plugin(id = "Inspector", name = "Inspector", version = "0.2")
 public class Inspector
 {
 	public static Game game;
@@ -91,22 +91,22 @@ public class Inspector
 		HashMap<List<String>, CommandSpec> inspectorSubcommands = new HashMap<List<String>, CommandSpec>();
 
 		inspectorSubcommands.put(Arrays.asList("toggle"), CommandSpec.builder()
-		 		.description(Texts.of("Toggle Inspector Command"))
+		 		.description(Text.of("Toggle Inspector Command"))
 				.permission("inspector.toggle")
 		 		.executor(new ToggleInspectorExecutor())
 		 		.build());
 		
 		inspectorSubcommands.put(Arrays.asList("rollback"), CommandSpec.builder()
-	 		.description(Texts.of("Rollback Command"))
+	 		.description(Text.of("Rollback Command"))
 			.permission("inspector.rollback")
 			.arguments(GenericArguments.seq(
-				GenericArguments.onlyOne(GenericArguments.string(Texts.of("time"))),
-				GenericArguments.optional(GenericArguments.onlyOne(GenericArguments.string(Texts.of("player"))))))
+				GenericArguments.onlyOne(GenericArguments.string(Text.of("time"))),
+				GenericArguments.optional(GenericArguments.onlyOne(GenericArguments.string(Text.of("player"))))))
 	 		.executor(new RollbackExecutor())
 	 		.build());
 
 		CommandSpec inspectorCommandSpec = CommandSpec.builder()
-				.description(Texts.of("Inspector Command"))
+				.description(Text.of("Inspector Command"))
 				.permission("inspector.use")
 				.executor(new InspectorExecutor())
 				.children(inspectorSubcommands)

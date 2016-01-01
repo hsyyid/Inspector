@@ -6,7 +6,7 @@ import io.github.hsyyid.inspector.utilities.DatabaseManager;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.text.Texts;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -29,7 +29,7 @@ public class PlayerInteractBlockListener
 
 				if (information.size() == 0)
 				{
-					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "No information found for this block."));
+					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "No information found for this block."));
 					return;
 				}
 
@@ -40,14 +40,14 @@ public class PlayerInteractBlockListener
 					UUID playerUUID = blockInfo.getPlayerUUID();
 					String timeEdited = blockInfo.getTimeEdited();
 
-					player.sendMessage(Texts.of(TextColors.GRAY, "-------------------------"));
-					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Player Edited: ", TextColors.GOLD, playerName));
-					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "UUID of Player Edited: ", TextColors.GOLD, playerUUID.toString()));
-					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited));
-					player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block ID: ", TextColors.GOLD, blockID));
+					player.sendMessage(Text.of(TextColors.GRAY, "-------------------------"));
+					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Player Edited: ", TextColors.GOLD, playerName));
+					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "UUID of Player Edited: ", TextColors.GOLD, playerUUID.toString()));
+					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited));
+					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block ID: ", TextColors.GOLD, blockID));
 					if (blockInfo.getNewMeta() != -1)
-						player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block Meta: ", TextColors.GOLD, blockInfo.getNewMeta()));
-					player.sendMessage(Texts.of(TextColors.GRAY, "-------------------------"));
+						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block Meta: ", TextColors.GOLD, blockInfo.getNewMeta()));
+					player.sendMessage(Text.of(TextColors.GRAY, "-------------------------"));
 				}
 
 				event.setCancelled(true);
@@ -66,7 +66,7 @@ public class PlayerInteractBlockListener
 			{
 				Location<World> pointA = event.getTargetBlock().getLocation().get();
 				DatabaseManager.addPointOrCreateRegionOf(player.getUniqueId(), pointA, false);
-				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position A to ", TextColors.GOLD, "(" + pointA.getBlockX() + ", " + pointA.getBlockY() + ", " + pointA.getBlockZ() + ")"));
+				player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position A to ", TextColors.GOLD, "(" + pointA.getBlockX() + ", " + pointA.getBlockY() + ", " + pointA.getBlockZ() + ")"));
 				event.setCancelled(true);
 			}
 		}
@@ -83,7 +83,7 @@ public class PlayerInteractBlockListener
 			{
 				Location<World> pointB = event.getTargetBlock().getLocation().get();
 				DatabaseManager.addPointOrCreateRegionOf(player.getUniqueId(), pointB, true);
-				player.sendMessage(Texts.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position B to ", TextColors.GOLD, "(" + pointB.getBlockX() + ", " + pointB.getBlockY() + ", " + pointB.getBlockZ() + ")"));
+				player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Set position B to ", TextColors.GOLD, "(" + pointB.getBlockX() + ", " + pointB.getBlockY() + ", " + pointB.getBlockZ() + ")"));
 				event.setCancelled(true);
 			}
 		}
