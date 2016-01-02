@@ -30,14 +30,14 @@ public class PlayerPlaceBlockListener
 				BlockType oldBlockType = transaction.getOriginal().getState().getType();
 				int oldBlockMeta = -1;
 				
-				if(transaction.getFinal().getState().toContainer().get(new DataQuery("UnsafeMeta")).isPresent())
-					oldBlockMeta = (Integer) (transaction.getFinal().getState().toContainer().get(new DataQuery("UnsafeMeta")).get());
+				if(transaction.getFinal().getState().toContainer().get(DataQuery.of("UnsafeMeta")).isPresent())
+					oldBlockMeta = (Integer) (transaction.getFinal().getState().toContainer().get(DataQuery.of("UnsafeMeta")).get());
 				
 				BlockType newBlockType = transaction.getFinal().getState().getType();
 				int newBlockMeta = -1;
 				
-				if(transaction.getFinal().getState().toContainer().get(new DataQuery("UnsafeMeta")).isPresent())
-					newBlockMeta = (Integer) (transaction.getFinal().getState().toContainer().get(new DataQuery("UnsafeMeta")).get());
+				if(transaction.getFinal().getState().toContainer().get(DataQuery.of("UnsafeMeta")).isPresent())
+					newBlockMeta = (Integer) (transaction.getFinal().getState().toContainer().get(DataQuery.of("UnsafeMeta")).get());
 				
 				Calendar cal = Calendar.getInstance();
 				SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");

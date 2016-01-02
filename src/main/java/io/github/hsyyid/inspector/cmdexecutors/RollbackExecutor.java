@@ -99,7 +99,7 @@ public class RollbackExecutor implements CommandExecutor
 
 					if (blockInfo.getOldMeta() != -1)
 					{
-						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getOldMeta());
+						DataContainer container = blockState.toContainer().set(DataQuery.of("UnsafeMeta"), blockInfo.getOldMeta());
 						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
 					}
 
@@ -139,7 +139,7 @@ public class RollbackExecutor implements CommandExecutor
 
 					if (blockInfo.getOldMeta() != -1)
 					{
-						DataContainer container = blockState.toContainer().set(new DataQuery("UnsafeMeta"), blockInfo.getOldMeta());
+						DataContainer container = blockState.toContainer().set(DataQuery.of("UnsafeMeta"), blockInfo.getOldMeta());
 						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
 					}
 
