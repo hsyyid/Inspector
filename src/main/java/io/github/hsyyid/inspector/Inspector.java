@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Plugin(id = "Inspector", name = "Inspector", version = "0.2")
+@Plugin(id = "Inspector", name = "Inspector", version = "0.3")
 public class Inspector
 {
 	public static Game game;

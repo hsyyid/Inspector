@@ -1,11 +1,15 @@
 package io.github.hsyyid.inspector.listeners;
 
+import com.google.common.collect.Lists;
 import io.github.hsyyid.inspector.Inspector;
 import io.github.hsyyid.inspector.utilities.BlockInformation;
 import io.github.hsyyid.inspector.utilities.DatabaseManager;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.service.pagination.PaginationBuilder;
+import org.spongepowered.api.service.pagination.PaginationService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
@@ -33,6 +37,8 @@ public class PlayerInteractBlockListener
 					return;
 				}
 
+				List<Text> blockChanges = Lists.newArrayList();
+
 				for (BlockInformation blockInfo : information)
 				{
 					String blockID = blockInfo.getNewBlockID();
@@ -40,16 +46,27 @@ public class PlayerInteractBlockListener
 					UUID playerUUID = blockInfo.getPlayerUUID();
 					String timeEdited = blockInfo.getTimeEdited();
 
-					player.sendMessage(Text.of(TextColors.GRAY, "-------------------------"));
-					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Player Edited: ", TextColors.GOLD, playerName));
-					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "UUID of Player Edited: ", TextColors.GOLD, playerUUID.toString()));
-					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited));
-					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block ID: ", TextColors.GOLD, blockID));
+					Text blockChange = Text.builder()
+						.append(Text.of(TextColors.GRAY, "Player Edited: ", TextColors.GOLD, playerName, "\n"))
+						.append(Text.of(TextColors.GRAY, "UUID of Player Edited: ", TextColors.GOLD, playerUUID.toString(), "\n"))
+						.append(Text.of(TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited, "\n"))
+						.append(Text.of(TextColors.GRAY, "Block ID: ", TextColors.GOLD, blockID, "\n"))
+						.build();
+
 					if (blockInfo.getNewMeta() != -1)
-						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Block Meta: ", TextColors.GOLD, blockInfo.getNewMeta()));
-					player.sendMessage(Text.of(TextColors.GRAY, "-------------------------"));
+					{
+						blockChange = Text.builder()
+							.append(blockChange)
+							.append(Text.of(TextColors.GRAY, "Block Meta: ", TextColors.GOLD, blockInfo.getNewMeta(), "\n"))
+							.build();
+					}
+
+					blockChanges.add(blockChange);
 				}
 
+				PaginationService paginationService = Sponge.getServiceManager().provide(PaginationService.class).get();
+				PaginationBuilder paginationBuilder = paginationService.builder().title(Text.of(TextColors.BLUE, "[Inspector] ", TextColors.GRAY, "Block Changes")).paddingString("-").contents(blockChanges);
+				paginationBuilder.sendTo(player);
 				event.setCancelled(true);
 			}
 		}
