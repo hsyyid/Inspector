@@ -10,6 +10,7 @@ import io.github.hsyyid.inspector.listeners.PlayerBreakBlockListener;
 import io.github.hsyyid.inspector.listeners.PlayerInteractBlockListener;
 import io.github.hsyyid.inspector.listeners.PlayerPlaceBlockListener;
 import io.github.hsyyid.inspector.utilities.Region;
+import me.flibio.updatifier.Updatifier;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -32,7 +33,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Plugin(id = "Inspector", name = "Inspector", version = "0.3")
+@Updatifier(repoName = "Inspector", repoOwner = "hsyyid", version = "v0.4")
+@Plugin(id = "Inspector", name = "Inspector", version = "0.4", dependencies = "after:Updatifier")
 public class Inspector
 {
 	public static Game game;
@@ -40,7 +42,7 @@ public class Inspector
 	public static ConfigurationLoader<CommentedConfigurationNode> configurationManager;
 	public static Set<UUID> inspectorEnabledPlayers = Sets.newHashSet();
 	public static Set<Region> regions = Sets.newHashSet();
-	
+
 	@Inject
 	private Logger logger;
 
@@ -91,26 +93,24 @@ public class Inspector
 		HashMap<List<String>, CommandSpec> inspectorSubcommands = new HashMap<List<String>, CommandSpec>();
 
 		inspectorSubcommands.put(Arrays.asList("toggle"), CommandSpec.builder()
-		 		.description(Text.of("Toggle Inspector Command"))
-				.permission("inspector.toggle")
-		 		.executor(new ToggleInspectorExecutor())
-		 		.build());
-		
+			.description(Text.of("Toggle Inspector Command"))
+			.permission("inspector.toggle")
+			.executor(new ToggleInspectorExecutor())
+			.build());
+
 		inspectorSubcommands.put(Arrays.asList("rollback"), CommandSpec.builder()
-	 		.description(Text.of("Rollback Command"))
+			.description(Text.of("Rollback Command"))
 			.permission("inspector.rollback")
-			.arguments(GenericArguments.seq(
-				GenericArguments.onlyOne(GenericArguments.string(Text.of("time"))),
-				GenericArguments.optional(GenericArguments.onlyOne(GenericArguments.string(Text.of("player"))))))
-	 		.executor(new RollbackExecutor())
-	 		.build());
+			.arguments(GenericArguments.seq(GenericArguments.onlyOne(GenericArguments.string(Text.of("time"))), GenericArguments.optional(GenericArguments.onlyOne(GenericArguments.string(Text.of("player"))))))
+			.executor(new RollbackExecutor())
+			.build());
 
 		CommandSpec inspectorCommandSpec = CommandSpec.builder()
-				.description(Text.of("Inspector Command"))
-				.permission("inspector.use")
-				.executor(new InspectorExecutor())
-				.children(inspectorSubcommands)
-				.build();
+			.description(Text.of("Inspector Command"))
+			.permission("inspector.use")
+			.executor(new InspectorExecutor())
+			.children(inspectorSubcommands)
+			.build();
 
 		game.getCommandManager().register(this, inspectorCommandSpec, "inspector", "ins", "insp");
 

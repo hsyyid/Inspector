@@ -3,7 +3,7 @@ apply plugin: 'eclipse'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-version = '0.3'
+version = '0.4'
 group = "io.github.hsyyid"
 archivesBaseName = "Inspector"
 
@@ -20,10 +20,14 @@ repositories {
         name 'Sponge maven repo'
         url 'http://repo.spongepowered.org/maven'
     }
+    maven {
+    	url 'https://jitpack.io'
+    }
 }
 
 dependencies {
-    compile "org.spongepowered:spongeapi:3.0.0"
+    compile "org.spongepowered:spongeapi:3.1.0-SNAPSHOT"
+	compile "com.github.Flibio:Updatifier:v1.0.0"
 }
 
 test {
