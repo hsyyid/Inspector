@@ -9,7 +9,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.First;
-import org.spongepowered.api.service.pagination.PaginationBuilder;
+import org.spongepowered.api.service.pagination.PaginationList;
 import org.spongepowered.api.service.pagination.PaginationService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
@@ -64,7 +64,7 @@ public class PlayerInteractBlockListener
 			}
 
 			PaginationService paginationService = Sponge.getServiceManager().provide(PaginationService.class).get();
-			PaginationBuilder paginationBuilder = paginationService.builder().title(Text.of(TextColors.BLUE, "[Inspector] ", TextColors.GRAY, "Block Changes")).paddingString("-").contents(blockChanges);
+			PaginationList.Builder paginationBuilder = paginationService.builder().title(Text.of(TextColors.BLUE, "[Inspector] ", TextColors.GRAY, "Block Changes")).padding(Text.of("-")).contents(blockChanges);
 			paginationBuilder.sendTo(player);
 			event.setCancelled(true);
 		}

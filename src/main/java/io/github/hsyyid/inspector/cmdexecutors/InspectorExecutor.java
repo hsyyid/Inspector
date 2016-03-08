@@ -13,7 +13,7 @@ public class InspectorExecutor implements CommandExecutor
 {
 	public CommandResult execute(CommandSource src, CommandContext ctx) throws CommandException
 	{
-		src.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Version: ", TextColors.GOLD, Inspector.game.getPluginManager().getPlugin("Inspector").get().getVersion()));
+		src.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Version: ", TextColors.GOLD, Inspector.game.getPluginManager().getPlugin("io.github.hsyyid.inspector").get().getVersion()));
 		return CommandResult.success();
 	}
 }

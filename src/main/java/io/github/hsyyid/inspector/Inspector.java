@@ -22,6 +22,7 @@ import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.text.Text;
 
@@ -33,8 +34,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Updatifier(repoName = "Inspector", repoOwner = "hsyyid", version = "v0.4")
-@Plugin(id = "Inspector", name = "Inspector", version = "0.4", dependencies = "after:Updatifier")
+@Updatifier(repoName = "Inspector", repoOwner = "hsyyid", version = "v0.5")
+@Plugin(id = "io.github.hsyyid.inspector", name = "Inspector", version = "0.5", dependencies = @Dependency(id = "Updatifier", version = "1.0", optional = true) )
 public class Inspector
 {
 	public static Game game;
