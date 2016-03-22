@@ -63,7 +63,7 @@ public class RollbackExecutor implements CommandExecutor
 					}
 					else
 					{
-						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may do a rollback for a region in two different worlds."));
+						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may not do a rollback for a region in two different worlds."));
 					}
 				}
 				else
