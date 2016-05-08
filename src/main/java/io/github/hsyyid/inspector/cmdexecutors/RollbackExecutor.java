@@ -1,9 +1,9 @@
 package io.github.hsyyid.inspector.cmdexecutors;
 
-import io.github.hsyyid.inspector.Inspector;
 import io.github.hsyyid.inspector.utilities.BlockInformation;
 import io.github.hsyyid.inspector.utilities.DatabaseManager;
 import io.github.hsyyid.inspector.utilities.Region;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.command.CommandException;
@@ -39,9 +39,7 @@ public class RollbackExecutor implements CommandExecutor
 		if (src instanceof Player)
 		{
 			Player player = (Player) src;
-
 			String timeInGMT = getTimeInGMT(time);
-
 			Optional<Region> optionalRegion = DatabaseManager.getRegion(player.getUniqueId());
 
 			if (optionalRegion.isPresent())
@@ -58,7 +56,7 @@ public class RollbackExecutor implements CommandExecutor
 						{
 							revertBlock(player, block, targetPlayer, timeInGMT);
 						}
-						
+
 						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Rollback completed."));
 					}
 					else
@@ -92,15 +90,15 @@ public class RollbackExecutor implements CommandExecutor
 
 			if (blockInfo != null)
 			{
-				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
+				if (Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
 				{
-					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
-					BlockState blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build();
+					BlockType blockType = Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
+					BlockState blockState = BlockState.builder().blockType(blockType).build();
 
 					if (blockInfo.getOldMeta() != -1)
 					{
 						DataContainer container = blockState.toContainer().set(DataQuery.of("UnsafeMeta"), blockInfo.getOldMeta());
-						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
+						blockState = BlockState.builder().blockType(blockType).build(container).get();
 					}
 
 					blockInfo.getLocation().setBlock(blockState);
@@ -117,30 +115,30 @@ public class RollbackExecutor implements CommandExecutor
 
 			if (blockInformation.size() != 0)
 			{
-				//Gets the most recent change before this block.
+				// Gets the most recent change before this block.
 				BlockInformation blockInfo = null;
-				
+
 				for (BlockInformation block : blockInformation)
 				{
-					if(blockInfo != null && DatabaseManager.wasChangedBefore(block, timeInGMT) && DatabaseManager.wasChangedBefore(blockInfo, block))
+					if (blockInfo != null && DatabaseManager.wasChangedBefore(block, timeInGMT) && DatabaseManager.wasChangedBefore(blockInfo, block))
 					{
 						blockInfo = block;
 					}
-					else if(DatabaseManager.wasChangedBefore(block, timeInGMT))
+					else if (DatabaseManager.wasChangedBefore(block, timeInGMT))
 					{
 						blockInfo = block;
 					}
 				}
-				
-				if (Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
+
+				if (Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
 				{
-					BlockType blockType = Inspector.game.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
-					BlockState blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build();
+					BlockType blockType = Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
+					BlockState blockState = BlockState.builder().blockType(blockType).build();
 
 					if (blockInfo.getOldMeta() != -1)
 					{
 						DataContainer container = blockState.toContainer().set(DataQuery.of("UnsafeMeta"), blockInfo.getOldMeta());
-						blockState = Inspector.game.getRegistry().createBuilder(BlockState.Builder.class).blockType(blockType).build(container).get();
+						blockState = BlockState.builder().blockType(blockType).build(container).get();
 					}
 
 					blockInfo.getLocation().setBlock(blockState);
@@ -167,16 +165,16 @@ public class RollbackExecutor implements CommandExecutor
 			int hours = playerInput.get(Calendar.HOUR);
 			int minutes = playerInput.get(Calendar.MINUTE);
 			int seconds = playerInput.get(Calendar.SECOND);
-			
+
 			Calendar currentTime = Calendar.getInstance();
 			SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
 			format.setTimeZone(TimeZone.getTimeZone("GMT"));
 			Date newTime = currentTime.getTime();
-			
+
 			newTime.setHours(newTime.getHours() - hours);
 			newTime.setMinutes(newTime.getMinutes() - minutes);
 			newTime.setSeconds(newTime.getSeconds() - seconds);
-			
+
 			timeInGMT = format.format(newTime);
 		}
 		catch (ParseException e)

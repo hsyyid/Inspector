@@ -7,6 +7,7 @@ import io.github.hsyyid.inspector.utilities.DatabaseManager;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.service.pagination.PaginationList;
@@ -21,7 +22,7 @@ import java.util.UUID;
 
 public class PlayerInteractBlockListener
 {
-	@Listener
+	@Listener(order=Order.FIRST)
 	public void onPlayerClickBlock(InteractBlockEvent event, @First Player player)
 	{
 		if (Inspector.inspectorEnabledPlayers.contains(player.getUniqueId()))
