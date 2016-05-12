@@ -1,46 +1,50 @@
 package io.github.hsyyid.inspector.cmdexecutors;
 
+import com.google.common.collect.Lists;
+import io.github.hsyyid.inspector.Inspector;
 import io.github.hsyyid.inspector.utilities.BlockInformation;
-import io.github.hsyyid.inspector.utilities.DatabaseManager;
 import io.github.hsyyid.inspector.utilities.Region;
+import io.github.hsyyid.inspector.utilities.Utils;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockState;
-import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
-import org.spongepowered.api.data.DataContainer;
-import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
+import org.spongepowered.api.service.pagination.PaginationList;
+import org.spongepowered.api.service.pagination.PaginationService;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 
 public class RollbackExecutor implements CommandExecutor
 {
 	public CommandResult execute(CommandSource src, CommandContext ctx) throws CommandException
 	{
-		String time = ctx.<String> getOne("time").get();
-		Optional<String> targetPlayer = ctx.<String> getOne("player");
+		User targetPlayer = ctx.<User> getOne("player").get();
+		Optional<String> time = ctx.<String> getOne("time");
 
 		if (src instanceof Player)
 		{
 			Player player = (Player) src;
-			String timeInGMT = getTimeInGMT(time);
-			Optional<Region> optionalRegion = DatabaseManager.getRegion(player.getUniqueId());
+			Optional<Region> optionalRegion = Utils.getRegion(player.getUniqueId());
 
 			if (optionalRegion.isPresent())
 			{
@@ -50,18 +54,40 @@ public class RollbackExecutor implements CommandExecutor
 				{
 					if (region.getPointA().getExtent().getUniqueId().equals(region.getPointB().getExtent().getUniqueId()))
 					{
-						Set<Location<World>> blocks = region.getContainingBlocks();
+						LocalDate lclDate = null;
 
-						for (Location<World> block : blocks)
+						if (time.isPresent())
 						{
-							revertBlock(player, block, targetPlayer, timeInGMT);
+							lclDate = this.extractDateFromString(time.get());
+
+							if (lclDate == null)
+							{
+								player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "Invalid time. Format is dd:mm:yyyy"));
+								return CommandResult.empty();
+							}
 						}
 
-						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Rollback completed."));
+						if (lclDate == null)
+						{
+							this.displayRevertOptions(player, region.getContainingBlocks(), targetPlayer.getUniqueId());
+						}
+						else
+						{
+							try
+							{
+								this.displayRevertOptions(player, region.getContainingBlocks(), targetPlayer.getUniqueId(), lclDate);
+							}
+							catch (ParseException e)
+							{
+								player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "An error occurred while parsing a date."));
+							}
+						}
+
+						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.GRAY, "Select an option."));
 					}
 					else
 					{
-						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may not do a rollback for a region in two different worlds."));
+						player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "You may do a rollback for a region in two different worlds."));
 					}
 				}
 				else
@@ -82,107 +108,114 @@ public class RollbackExecutor implements CommandExecutor
 		return CommandResult.success();
 	}
 
-	public void revertBlock(Player player, Location<World> location, Optional<String> targetPlayer, String timeInGMT)
+	private void displayRevertOptions(Player player, Set<Location<World>> locations, UUID targetPlayer)
 	{
-		if (targetPlayer.isPresent())
+		List<BlockInformation> results = Inspector.instance().getDatabaseManager().getBlockInformationAt(locations, targetPlayer);
+		List<Text> blockChanges = Lists.newArrayList();
+
+		if (!results.isEmpty())
 		{
-			BlockInformation blockInfo = DatabaseManager.getBlockInformationAt(location, targetPlayer.get(), timeInGMT);
-
-			if (blockInfo != null)
+			for (BlockInformation blockInfo : results)
 			{
-				if (Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
-				{
-					BlockType blockType = Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
-					BlockState blockState = BlockState.builder().blockType(blockType).build();
+				BlockSnapshot oldBlock = blockInfo.getOldBlockSnapshot();
+				BlockSnapshot newBlock = blockInfo.getNewBlockSnapshot();
+				String playerName = blockInfo.getPlayerName();
+				UUID playerUUID = blockInfo.getPlayerUUID();
+				String timeEdited = blockInfo.getTimeEdited();
 
-					if (blockInfo.getOldMeta() != -1)
-					{
-						DataContainer container = blockState.toContainer().set(DataQuery.of("UnsafeMeta"), blockInfo.getOldMeta());
-						blockState = BlockState.builder().blockType(blockType).build(container).get();
-					}
+				Text blockChange = Text.builder()
+					.append(Text.of(TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited, "\n"))
+					.append(Text.builder()
+						.append(Text.of(TextColors.GRAY, "Player Edited: ", TextColors.GOLD, TextStyles.UNDERLINE, playerName, "\n"))
+						.onHover(TextActions.showText(Text.of(TextColors.GRAY, "UUID: ", TextColors.GOLD, playerUUID.toString())))
+						.build())
+					.append(Text.builder()
+						.append(Text.of(TextColors.GRAY, "Old Block ID: ", TextColors.GOLD, TextStyles.UNDERLINE, oldBlock.getState().getType().getTranslation().get(), "\n"))
+						.onHover(TextActions.showText(Text.of(TextColors.GRAY, "ID: ", TextColors.GOLD, oldBlock.getState().getType().getId())))
+						.build())
+					.append(Text.builder()
+						.append(Text.of(TextColors.GRAY, "New Block ID: ", TextColors.GOLD, TextStyles.UNDERLINE, newBlock.getState().getType().getTranslation().get(), "\n"))
+						.onHover(TextActions.showText(Text.of(TextColors.GRAY, "ID: ", TextColors.GOLD, newBlock.getState().getType().getId())))
+						.build())
+					.onClick(TextActions.executeCallback((src) -> {
+						Utils.revertBlock(src, results.indexOf(blockInfo), results);
+					}))
+					.build();
 
-					blockInfo.getLocation().setBlock(blockState);
-				}
-				else
-				{
-					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "Block could not be recreated!"));
-				}
+				blockChanges.add(blockChange);
 			}
 		}
-		else
-		{
-			List<BlockInformation> blockInformation = DatabaseManager.getBlockInformationAt(location, timeInGMT);
 
-			if (blockInformation.size() != 0)
-			{
-				// Gets the most recent change before this block.
-				BlockInformation blockInfo = null;
-
-				for (BlockInformation block : blockInformation)
-				{
-					if (blockInfo != null && DatabaseManager.wasChangedBefore(block, timeInGMT) && DatabaseManager.wasChangedBefore(blockInfo, block))
-					{
-						blockInfo = block;
-					}
-					else if (DatabaseManager.wasChangedBefore(block, timeInGMT))
-					{
-						blockInfo = block;
-					}
-				}
-
-				if (Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).isPresent())
-				{
-					BlockType blockType = Sponge.getRegistry().getType(BlockType.class, blockInfo.getOldBlockID()).get();
-					BlockState blockState = BlockState.builder().blockType(blockType).build();
-
-					if (blockInfo.getOldMeta() != -1)
-					{
-						DataContainer container = blockState.toContainer().set(DataQuery.of("UnsafeMeta"), blockInfo.getOldMeta());
-						blockState = BlockState.builder().blockType(blockType).build(container).get();
-					}
-
-					blockInfo.getLocation().setBlock(blockState);
-				}
-				else
-				{
-					player.sendMessage(Text.of(TextColors.BLUE, "[Inspector]: ", TextColors.DARK_RED, "Error! ", TextColors.RED, "Block could not be recreated!"));
-				}
-			}
-		}
+		PaginationService paginationService = Sponge.getServiceManager().provide(PaginationService.class).get();
+		PaginationList.Builder paginationBuilder = paginationService.builder().title(Text.of(TextColors.BLUE, "[Inspector] ", TextColors.GRAY, "Block Changes")).padding(Text.of("-")).contents(blockChanges);
+		paginationBuilder.sendTo(player);
 	}
 
 	@SuppressWarnings("deprecation")
-	public String getTimeInGMT(String playerInputTime)
+	private void displayRevertOptions(Player player, Set<Location<World>> locations, UUID targetPlayer, LocalDate lclDate) throws ParseException
 	{
-		String timeInGMT = "";
+		List<BlockInformation> results = Inspector.instance().getDatabaseManager().getBlockInformationAt(locations, targetPlayer);
+		List<Text> blockChanges = Lists.newArrayList();
+
+		if (!results.isEmpty())
+		{
+			for (BlockInformation blockInfo : results)
+			{
+				BlockSnapshot oldBlock = blockInfo.getOldBlockSnapshot();
+				BlockSnapshot newBlock = blockInfo.getNewBlockSnapshot();
+				;
+				String playerName = blockInfo.getPlayerName();
+				UUID playerUUID = blockInfo.getPlayerUUID();
+				SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+				format.setTimeZone(TimeZone.getTimeZone("GMT"));
+				Date timeEdited = format.parse(blockInfo.getTimeEdited());
+
+				if (!(timeEdited.getYear() + 1900 == lclDate.getYear() && timeEdited.getMonth() + 1 == lclDate.getMonthValue() && timeEdited.getDate() == lclDate.getDayOfMonth()))
+				{
+					continue;
+				}
+
+				Text blockChange = Text.builder()
+					.append(Text.of(TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited, "\n"))
+					.append(Text.builder()
+						.append(Text.of(TextColors.GRAY, "Player Edited: ", TextColors.GOLD, TextStyles.UNDERLINE, playerName, "\n"))
+						.onHover(TextActions.showText(Text.of(TextColors.GRAY, "UUID: ", TextColors.GOLD, playerUUID.toString())))
+						.build())
+					.append(Text.builder()
+						.append(Text.of(TextColors.GRAY, "Old Block ID: ", TextColors.GOLD, TextStyles.UNDERLINE, oldBlock.getState().getType().getTranslation().get(), "\n"))
+						.onHover(TextActions.showText(Text.of(TextColors.GRAY, "ID: ", TextColors.GOLD, oldBlock.getState().getType().getId())))
+						.build())
+					.append(Text.builder()
+						.append(Text.of(TextColors.GRAY, "New Block ID: ", TextColors.GOLD, TextStyles.UNDERLINE, newBlock.getState().getType().getTranslation().get(), "\n"))
+						.onHover(TextActions.showText(Text.of(TextColors.GRAY, "ID: ", TextColors.GOLD, newBlock.getState().getType().getId())))
+						.build())
+					.onClick(TextActions.executeCallback((src) -> {
+						Utils.revertBlock(src, results.indexOf(blockInfo), results);
+					}))
+					.build();
+
+				blockChanges.add(blockChange);
+			}
+		}
+
+		PaginationService paginationService = Sponge.getServiceManager().provide(PaginationService.class).get();
+		PaginationList.Builder paginationBuilder = paginationService.builder().title(Text.of(TextColors.BLUE, "[Inspector] ", TextColors.GRAY, "Block Changes")).padding(Text.of("-")).contents(blockChanges);
+		paginationBuilder.sendTo(player);
+	}
+
+	public LocalDate extractDateFromString(String timeString)
+	{
+		// Format: mm:dd:yyyy
+		String date[] = timeString.split(":");
 
 		try
 		{
-			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-			Date date = sdf.parse(playerInputTime);
-			Calendar playerInput = GregorianCalendar.getInstance();
-			playerInput.setTime(date);
-			int hours = playerInput.get(Calendar.HOUR);
-			int minutes = playerInput.get(Calendar.MINUTE);
-			int seconds = playerInput.get(Calendar.SECOND);
-
-			Calendar currentTime = Calendar.getInstance();
-			SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
-			format.setTimeZone(TimeZone.getTimeZone("GMT"));
-			Date newTime = currentTime.getTime();
-
-			newTime.setHours(newTime.getHours() - hours);
-			newTime.setMinutes(newTime.getMinutes() - minutes);
-			newTime.setSeconds(newTime.getSeconds() - seconds);
-
-			timeInGMT = format.format(newTime);
+			LocalDate lclDate = LocalDate.of(Integer.parseInt(date[2]), Month.of(Integer.parseInt(date[0])), Integer.parseInt(date[1]));
+			return lclDate;
 		}
-		catch (ParseException e)
+		catch (NumberFormatException e)
 		{
-			;
+			return null;
 		}
-
-		return timeInGMT;
 	}
-
 }
