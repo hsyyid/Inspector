@@ -8,6 +8,7 @@ import io.github.hsyyid.inspector.cmdexecutors.ToggleInspectorExecutor;
 import io.github.hsyyid.inspector.listeners.ExplosionListener;
 import io.github.hsyyid.inspector.listeners.PlayerBreakBlockListener;
 import io.github.hsyyid.inspector.listeners.PlayerInteractBlockListener;
+import io.github.hsyyid.inspector.listeners.PlayerJoinListener;
 import io.github.hsyyid.inspector.listeners.PlayerPlaceBlockListener;
 import io.github.hsyyid.inspector.utilities.DatabaseManager;
 import io.github.hsyyid.inspector.utilities.Region;
@@ -134,6 +135,7 @@ public class Inspector
 		Sponge.getEventManager().registerListeners(this, new PlayerInteractBlockListener());
 		Sponge.getEventManager().registerListeners(this, new PlayerBreakBlockListener());
 		Sponge.getEventManager().registerListeners(this, new ExplosionListener());
+		Sponge.getEventManager().registerListeners(this, new PlayerJoinListener());
 
 		getLogger().info("-----------------------------");
 		getLogger().info("Inspector was made by HassanS6000!");

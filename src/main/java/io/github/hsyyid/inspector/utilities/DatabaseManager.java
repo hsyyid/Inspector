@@ -5,11 +5,13 @@ import static org.spongepowered.api.data.DataQuery.of;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.github.hsyyid.inspector.Inspector;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.MemoryDataContainer;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.service.sql.SqlService;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -74,7 +76,12 @@ public class DatabaseManager
 			Connection c = this.getDatabaseConnection();
 			Statement stmt = c.createStatement();
 
-			String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + "(X             INT       NOT NULL," + " Y             INT       NOT NULL," + " Z             INT       NOT NULL," + " WORLDUUID    TEXT      NOT NULL," + " PLAYERUUID    TEXT      NOT NULL," + " PLAYERNAME    TEXT      NOT NULL," + " TIME          TEXT      NOT NULL," + " OLDBLOCK      TEXT      NOT NULL," + " NEWBLOCK      TEXT      NOT NULL)";
+			String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" +
+				"(LOCATION      TEXT       NOT NULL," + 
+				" PLAYERID      INT        NOT NULL," + 
+				" TIME          TEXT       NOT NULL," + 
+				" OLDBLOCK      TEXT       NOT NULL," + 
+				" NEWBLOCK      TEXT       NOT NULL)";
 			stmt.executeUpdate(sql);
 
 			Map<?, ?> serializedBlock = oldBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
@@ -82,8 +89,9 @@ public class DatabaseManager
 			serializedBlock = newBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
 			String newBlock = this.gson.toJson(serializedBlock);
 
-			sql = "INSERT INTO BLOCKINFO (X,Y,Z,WORLDUUID,PLAYERUUID,PLAYERNAME,TIME,OLDBLOCK,NEWBLOCK) " +
-				"VALUES (" + x + "," + y + "," + z + ",'" + worldUUID.toString() + "','" + playerUUID.toString() + "'," + "'" + playerName + "','" + time + "','" + oldBlock + "','" + newBlock + "');";
+			sql = "INSERT INTO BLOCKINFO (LOCATION,PLAYERID,TIME,OLDBLOCK,NEWBLOCK) " +
+				"VALUES ('" + x + ";" + y + ";" + z + ";" + worldUUID.toString() + "'," +
+				this.getPlayerId(playerUUID) + ",'" + time + "','" + oldBlock + "','" + newBlock + "');";
 			stmt.executeUpdate(sql);
 
 			stmt.close();
@@ -95,6 +103,140 @@ public class DatabaseManager
 		}
 	}
 
+	public void addPlayerToDatabase(Player player)
+	{
+		try
+		{
+			Connection c = this.getDatabaseConnection();
+			Statement stmt = c.createStatement();
+
+			String sql = "INSERT INTO PLAYERS (UUID, NAME) " +
+				"VALUES ('" + player.getUniqueId().toString() + "','" + player.getName() + "');";
+			stmt.executeUpdate(sql);
+
+			stmt.close();
+			c.close();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public boolean isPlayerInDatabase(Player player)
+	{
+		boolean isInDatabase = false;
+
+		try
+		{
+			Connection c = this.getDatabaseConnection();
+			Statement stmt = c.createStatement();
+			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS PLAYERS" + 
+				"(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," + 
+				" UUID          TEXT       NOT NULL," +
+				" NAME          TEXT       NOT NULL)");
+
+			PreparedStatement preparedStmt = c.prepareStatement("SELECT count(*) from PLAYERS WHERE uuid=?");
+			preparedStmt.setString(1, player.getUniqueId().toString());
+			ResultSet rs = preparedStmt.executeQuery();
+
+			if(rs.next())
+			{
+				isInDatabase = rs.getInt(1) > 0;
+			}
+
+			stmt.close();
+			preparedStmt.close();
+			c.close();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
+		return isInDatabase;
+	}
+
+	private int getPlayerId(UUID uniqueId)
+	{
+		int id = -1;
+
+		try
+		{
+			Connection c = Inspector.instance().getDatabaseManager().getDatabaseConnection();
+			PreparedStatement stmt = c.prepareStatement("SELECT * FROM PLAYERS WHERE uuid=?");
+			stmt.setString(1, uniqueId.toString());
+
+			ResultSet rs = stmt.executeQuery();
+
+			while (rs.next())
+			{
+				id = rs.getInt("id");
+			}
+
+			stmt.close();
+			c.close();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
+		return id;
+	}
+
+	private UUID getPlayerUniqueId(int id)
+	{
+		try
+		{
+			Connection c = Inspector.instance().getDatabaseManager().getDatabaseConnection();
+			PreparedStatement stmt = c.prepareStatement("SELECT * FROM PLAYERS WHERE id=?");
+			stmt.setInt(1, id);
+			ResultSet rs = stmt.executeQuery();
+			
+			while (rs.next())
+			{
+				return UUID.fromString(rs.getString("uuid"));
+			}
+
+			stmt.close();
+			c.close();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	private String getPlayerName(int id)
+	{
+		String name = "";
+		
+		try
+		{
+			Connection c = Inspector.instance().getDatabaseManager().getDatabaseConnection();
+			PreparedStatement stmt = c.prepareStatement("SELECT * FROM PLAYERS WHERE id=?");
+			stmt.setInt(1, id);
+			ResultSet rs = stmt.executeQuery();
+
+			while (rs.next())
+			{
+				name = rs.getString("name");
+			}
+			
+			stmt.close();
+			c.close();
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+
+		return name;
+	}
+
 	public List<BlockInformation> getBlockInformationAt(Location<World> location)
 	{
 		List<BlockInformation> blockInformation = Lists.newArrayList();
@@ -102,11 +244,9 @@ public class DatabaseManager
 		try
 		{
 			Connection c = this.getDatabaseConnection();
-			PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE x=? AND y=? AND z=? AND worldUUID=?");
-			stmt.setInt(1, location.getBlockX());
-			stmt.setInt(2, location.getBlockY());
-			stmt.setInt(3, location.getBlockZ());
-			stmt.setString(4, location.getExtent().getUniqueId().toString());
+			PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE location=?");
+			stmt.setString(1, location.getBlockX() + ";" + location.getBlockY() + ";" +
+				location.getBlockZ() + ";" + location.getExtent().getUniqueId().toString());
 
 			ResultSet rs = stmt.executeQuery();
 
@@ -114,8 +254,8 @@ public class DatabaseManager
 			{
 				BlockSnapshot oldBlockSnapshot = this.deserializeBlockSnapshot(rs.getString("oldBlock"));
 				BlockSnapshot newBlockSnapshot = this.deserializeBlockSnapshot(rs.getString("newBlock"));
-
-				blockInformation.add(new BlockInformation(location, oldBlockSnapshot, newBlockSnapshot, rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName")));
+				int id = rs.getInt("playerid");
+				blockInformation.add(new BlockInformation(location, oldBlockSnapshot, newBlockSnapshot, rs.getString("time"), this.getPlayerUniqueId(id), this.getPlayerName(id)));
 			}
 
 			stmt.close();
@@ -132,18 +272,17 @@ public class DatabaseManager
 	public List<BlockInformation> getBlockInformationAt(Set<Location<World>> locations, UUID playerUniqueId)
 	{
 		List<BlockInformation> blockInformation = Lists.newArrayList();
+		int playerId = this.getPlayerId(playerUniqueId);
 
 		for (Location<World> location : locations)
 		{
 			try
 			{
 				Connection c = this.getDatabaseConnection();
-				PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE x=? AND y=? AND z=? AND worldUUID=? AND playerUUID=?");
-				stmt.setInt(1, location.getBlockX());
-				stmt.setInt(2, location.getBlockY());
-				stmt.setInt(3, location.getBlockZ());
-				stmt.setString(4, location.getExtent().getUniqueId().toString());
-				stmt.setString(5, playerUniqueId.toString());
+				PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE location=? AND playerId=?");
+				stmt.setString(1, location.getBlockX() + ";" + location.getBlockY() + ";" + location.getBlockZ() + ";" 
+					+ location.getExtent().getUniqueId().toString());
+				stmt.setInt(2, playerId);
 
 				ResultSet rs = stmt.executeQuery();
 
@@ -151,8 +290,7 @@ public class DatabaseManager
 				{
 					BlockSnapshot oldBlockSnapshot = this.deserializeBlockSnapshot(rs.getString("oldBlock"));
 					BlockSnapshot newBlockSnapshot = this.deserializeBlockSnapshot(rs.getString("newBlock"));
-
-					blockInformation.add(new BlockInformation(location, oldBlockSnapshot, newBlockSnapshot, rs.getString("time"), UUID.fromString(rs.getString("playerUUID")), rs.getString("playerName")));
+					blockInformation.add(new BlockInformation(location, oldBlockSnapshot, newBlockSnapshot, rs.getString("time"), playerUniqueId, this.getPlayerName(playerId)));
 				}
 
 				stmt.close();
