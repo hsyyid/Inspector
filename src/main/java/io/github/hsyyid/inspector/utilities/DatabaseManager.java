@@ -36,37 +36,39 @@ import javax.sql.DataSource;
 public class DatabaseManager
 {
 	private Gson gson = new GsonBuilder().create();
+	private Connection connection;
 
 	private Connection getDatabaseConnection() throws SQLException
 	{
-		Connection connection = null;
-
-		if ((boolean) Utils.getConfigValue("database.mysql.enabled"))
+		if (this.connection == null)
 		{
-			SqlService sql = Sponge.getServiceManager().provide(SqlService.class).get();
-			String host = (String) Utils.getConfigValue("database.mysql.host");
-			String port = (String) Utils.getConfigValue("database.mysql.port");
-			String username = (String) Utils.getConfigValue("database.mysql.username");
-			String password = (String) Utils.getConfigValue("database.mysql.password");
-			String database = (String) Utils.getConfigValue("database.mysql.database");
-			DataSource datasource = sql.getDataSource("jdbc:mysql://" + host + ":" + port + "/" + database + "?user=" + username + "&password=" + password);
-			connection = datasource.getConnection();
-		}
-		else
-		{
-			try
+			if ((boolean) Utils.getConfigValue("database.mysql.enabled"))
 			{
-				Class.forName("org.sqlite.JDBC");
+				SqlService sql = Sponge.getServiceManager().provide(SqlService.class).get();
+				String host = (String) Utils.getConfigValue("database.mysql.host");
+				String port = (String) Utils.getConfigValue("database.mysql.port");
+				String username = (String) Utils.getConfigValue("database.mysql.username");
+				String password = (String) Utils.getConfigValue("database.mysql.password");
+				String database = (String) Utils.getConfigValue("database.mysql.database");
+				DataSource datasource = sql.getDataSource("jdbc:mysql://" + host + ":" + port + "/" + database + "?user=" + username + "&password=" + password);
+				connection = datasource.getConnection();
 			}
-			catch (ClassNotFoundException e)
+			else
 			{
-				System.err.println("[Inspector]: Error! You do not have any database software installed. This plugin cannot work correctly!");
-			}
+				try
+				{
+					Class.forName("org.sqlite.JDBC");
+				}
+				catch (ClassNotFoundException e)
+				{
+					System.err.println("[Inspector]: Error! You do not have any database software installed. This plugin cannot work correctly!");
+				}
 
-			connection = DriverManager.getConnection("jdbc:sqlite:Inspector.db");
+				connection = DriverManager.getConnection("jdbc:sqlite:Inspector.db");
+			}
 		}
 
-		return connection;
+		return this.connection;
 	}
 
 	public void updateBlockInformation(int x, int y, int z, UUID worldUUID, UUID playerUUID, String playerName, String time, BlockSnapshot oldBlockSnapshot, BlockSnapshot newBlockSnapshot)
@@ -76,12 +78,7 @@ public class DatabaseManager
 			Connection c = this.getDatabaseConnection();
 			Statement stmt = c.createStatement();
 
-			String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" +
-				"(LOCATION      TEXT       NOT NULL," + 
-				" PLAYERID      INT        NOT NULL," + 
-				" TIME          TEXT       NOT NULL," + 
-				" OLDBLOCK      TEXT       NOT NULL," + 
-				" NEWBLOCK      TEXT       NOT NULL)";
+			String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + "(LOCATION      TEXT       NOT NULL," + " PLAYERID      INT        NOT NULL," + " TIME          TEXT       NOT NULL," + " OLDBLOCK      TEXT       NOT NULL," + " NEWBLOCK      TEXT       NOT NULL)";
 			stmt.executeUpdate(sql);
 
 			Map<?, ?> serializedBlock = oldBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
@@ -89,13 +86,10 @@ public class DatabaseManager
 			serializedBlock = newBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
 			String newBlock = this.gson.toJson(serializedBlock);
 
-			sql = "INSERT INTO BLOCKINFO (LOCATION,PLAYERID,TIME,OLDBLOCK,NEWBLOCK) " +
-				"VALUES ('" + x + ";" + y + ";" + z + ";" + worldUUID.toString() + "'," +
-				this.getPlayerId(playerUUID) + ",'" + time + "','" + oldBlock + "','" + newBlock + "');";
+			sql = "INSERT INTO BLOCKINFO (LOCATION,PLAYERID,TIME,OLDBLOCK,NEWBLOCK) " + "VALUES ('" + x + ";" + y + ";" + z + ";" + worldUUID.toString() + "'," + this.getPlayerId(playerUUID) + ",'" + time + "','" + oldBlock + "','" + newBlock + "');";
 			stmt.executeUpdate(sql);
 
 			stmt.close();
-			c.close();
 		}
 		catch (SQLException e)
 		{
@@ -110,12 +104,10 @@ public class DatabaseManager
 			Connection c = this.getDatabaseConnection();
 			Statement stmt = c.createStatement();
 
-			String sql = "INSERT INTO PLAYERS (UUID, NAME) " +
-				"VALUES ('" + player.getUniqueId().toString() + "','" + player.getName() + "');";
+			String sql = "INSERT INTO PLAYERS (UUID, NAME) " + "VALUES ('" + player.getUniqueId().toString() + "','" + player.getName() + "');";
 			stmt.executeUpdate(sql);
 
 			stmt.close();
-			c.close();
 		}
 		catch (SQLException e)
 		{
@@ -131,23 +123,19 @@ public class DatabaseManager
 		{
 			Connection c = this.getDatabaseConnection();
 			Statement stmt = c.createStatement();
-			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS PLAYERS" + 
-				"(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," + 
-				" UUID          TEXT       NOT NULL," +
-				" NAME          TEXT       NOT NULL)");
+			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS PLAYERS" + "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," + " UUID          TEXT       NOT NULL," + " NAME          TEXT       NOT NULL)");
 
 			PreparedStatement preparedStmt = c.prepareStatement("SELECT count(*) from PLAYERS WHERE uuid=?");
 			preparedStmt.setString(1, player.getUniqueId().toString());
 			ResultSet rs = preparedStmt.executeQuery();
 
-			if(rs.next())
+			if (rs.next())
 			{
 				isInDatabase = rs.getInt(1) > 0;
 			}
 
 			stmt.close();
 			preparedStmt.close();
-			c.close();
 		}
 		catch (SQLException e)
 		{
@@ -175,7 +163,6 @@ public class DatabaseManager
 			}
 
 			stmt.close();
-			c.close();
 		}
 		catch (SQLException e)
 		{
@@ -193,14 +180,13 @@ public class DatabaseManager
 			PreparedStatement stmt = c.prepareStatement("SELECT * FROM PLAYERS WHERE id=?");
 			stmt.setInt(1, id);
 			ResultSet rs = stmt.executeQuery();
-			
+
 			while (rs.next())
 			{
 				return UUID.fromString(rs.getString("uuid"));
 			}
 
 			stmt.close();
-			c.close();
 		}
 		catch (SQLException e)
 		{
@@ -213,7 +199,7 @@ public class DatabaseManager
 	private String getPlayerName(int id)
 	{
 		String name = "";
-		
+
 		try
 		{
 			Connection c = Inspector.instance().getDatabaseManager().getDatabaseConnection();
@@ -225,9 +211,8 @@ public class DatabaseManager
 			{
 				name = rs.getString("name");
 			}
-			
+
 			stmt.close();
-			c.close();
 		}
 		catch (SQLException e)
 		{
@@ -245,8 +230,7 @@ public class DatabaseManager
 		{
 			Connection c = this.getDatabaseConnection();
 			PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE location=?");
-			stmt.setString(1, location.getBlockX() + ";" + location.getBlockY() + ";" +
-				location.getBlockZ() + ";" + location.getExtent().getUniqueId().toString());
+			stmt.setString(1, location.getBlockX() + ";" + location.getBlockY() + ";" + location.getBlockZ() + ";" + location.getExtent().getUniqueId().toString());
 
 			ResultSet rs = stmt.executeQuery();
 
@@ -259,7 +243,6 @@ public class DatabaseManager
 			}
 
 			stmt.close();
-			c.close();
 		}
 		catch (SQLException e)
 		{
@@ -280,8 +263,7 @@ public class DatabaseManager
 			{
 				Connection c = this.getDatabaseConnection();
 				PreparedStatement stmt = c.prepareStatement("SELECT * FROM BLOCKINFO WHERE location=? AND playerId=?");
-				stmt.setString(1, location.getBlockX() + ";" + location.getBlockY() + ";" + location.getBlockZ() + ";" 
-					+ location.getExtent().getUniqueId().toString());
+				stmt.setString(1, location.getBlockX() + ";" + location.getBlockY() + ";" + location.getBlockZ() + ";" + location.getExtent().getUniqueId().toString());
 				stmt.setInt(2, playerId);
 
 				ResultSet rs = stmt.executeQuery();
@@ -294,7 +276,6 @@ public class DatabaseManager
 				}
 
 				stmt.close();
-				c.close();
 			}
 			catch (SQLException e)
 			{
