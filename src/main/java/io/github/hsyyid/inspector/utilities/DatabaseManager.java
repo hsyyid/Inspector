@@ -124,7 +124,8 @@ public class DatabaseManager
 			Connection c = this.getDatabaseConnection();
 			Statement stmt = c.createStatement();
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS PLAYERS" + "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," + " UUID          TEXT       NOT NULL," + " NAME          TEXT       NOT NULL)");
-
+			stmt.close();
+			
 			PreparedStatement preparedStmt = c.prepareStatement("SELECT count(*) from PLAYERS WHERE uuid=?");
 			preparedStmt.setString(1, player.getUniqueId().toString());
 			ResultSet rs = preparedStmt.executeQuery();
@@ -134,7 +135,7 @@ public class DatabaseManager
 				isInDatabase = rs.getInt(1) > 0;
 			}
 
-			stmt.close();
+			rs.close();
 			preparedStmt.close();
 		}
 		catch (SQLException e)
@@ -162,6 +163,7 @@ public class DatabaseManager
 				id = rs.getInt("id");
 			}
 
+			rs.close();
 			stmt.close();
 		}
 		catch (SQLException e)
@@ -186,6 +188,7 @@ public class DatabaseManager
 				return UUID.fromString(rs.getString("uuid"));
 			}
 
+			rs.close();
 			stmt.close();
 		}
 		catch (SQLException e)
@@ -212,6 +215,7 @@ public class DatabaseManager
 				name = rs.getString("name");
 			}
 
+			rs.close();
 			stmt.close();
 		}
 		catch (SQLException e)
@@ -242,6 +246,7 @@ public class DatabaseManager
 				blockInformation.add(new BlockInformation(location, oldBlockSnapshot, newBlockSnapshot, rs.getString("time"), this.getPlayerUniqueId(id), this.getPlayerName(id)));
 			}
 
+			rs.close();
 			stmt.close();
 		}
 		catch (SQLException e)
@@ -275,6 +280,7 @@ public class DatabaseManager
 					blockInformation.add(new BlockInformation(location, oldBlockSnapshot, newBlockSnapshot, rs.getString("time"), playerUniqueId, this.getPlayerName(playerId)));
 				}
 
+				rs.close();
 				stmt.close();
 			}
 			catch (SQLException e)
