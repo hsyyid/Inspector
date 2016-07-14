@@ -6,6 +6,8 @@ import io.github.hsyyid.inspector.utilities.BlockInformation;
 import io.github.hsyyid.inspector.utilities.Utils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.data.type.HandType;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
@@ -83,7 +85,8 @@ public class PlayerInteractBlockListener
 	@Listener
 	public void onPlayerLeftClickBlock(InteractBlockEvent.Primary event, @First Player player)
 	{
-		if (player.hasPermission("inspector.region.use") && player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) Utils.getConfigValue("inspector.select.tool")))
+		HandType hand=event instanceof InteractBlockEvent.Primary.MainHand?HandTypes.MAIN_HAND:HandTypes.OFF_HAND;
+		if (player.hasPermission("inspector.region.use") && player.getItemInHand(hand).isPresent() && player.getItemInHand(hand).get().getItem().getName().equals((String) Utils.getConfigValue("inspector.select.tool")))
 		{
 			Location<World> pointA = event.getTargetBlock().getLocation().get();
 			Utils.addPointOrCreateRegionOf(player.getUniqueId(), pointA, false);
@@ -95,7 +98,9 @@ public class PlayerInteractBlockListener
 	@Listener
 	public void onPlayerRightClickBlock(InteractBlockEvent.Secondary event, @First Player player)
 	{
-		if (player.hasPermission("inspector.region.use") && player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) Utils.getConfigValue("inspector.select.tool")))
+		HandType hand=event instanceof InteractBlockEvent.Secondary.MainHand?HandTypes.MAIN_HAND:HandTypes.OFF_HAND;
+
+		if (player.hasPermission("inspector.region.use") && player.getItemInHand(hand).isPresent() && player.getItemInHand(hand).get().getItem().getName().equals((String) Utils.getConfigValue("inspector.select.tool")))
 		{
 			Location<World> pointB = event.getTargetBlock().getLocation().get();
 			Utils.addPointOrCreateRegionOf(player.getUniqueId(), pointB, true);
