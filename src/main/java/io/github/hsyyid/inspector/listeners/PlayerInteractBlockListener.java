@@ -1,16 +1,18 @@
 package io.github.hsyyid.inspector.listeners;
 
-import com.google.common.collect.Lists;
-import io.github.hsyyid.inspector.Inspector;
-import io.github.hsyyid.inspector.utilities.BlockInformation;
-import io.github.hsyyid.inspector.utilities.Utils;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.First;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.service.pagination.PaginationList;
 import org.spongepowered.api.service.pagination.PaginationService;
 import org.spongepowered.api.text.Text;
@@ -20,9 +22,11 @@ import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.google.common.collect.Lists;
+
+import io.github.hsyyid.inspector.Inspector;
+import io.github.hsyyid.inspector.utilities.BlockInformation;
+import io.github.hsyyid.inspector.utilities.Utils;
 
 public class PlayerInteractBlockListener
 {
@@ -81,9 +85,11 @@ public class PlayerInteractBlockListener
 	}
 
 	@Listener
-	public void onPlayerLeftClickBlock(InteractBlockEvent.Primary event, @First Player player)
+	public void onPlayerLeftClickBlock(InteractBlockEvent.Primary event, @Root Player player)
 	{
-		if (player.hasPermission("inspector.region.use") && player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) Utils.getConfigValue("inspector.select.tool")))
+		if (player.hasPermission("inspector.region.use") && player.getItemInHand(HandTypes.MAIN_HAND).isPresent() 
+			&& player.getItemInHand(HandTypes.MAIN_HAND).get().getItem().getName()
+				.equals((String) Utils.getConfigValue("inspector.select.tool")))
 		{
 			Location<World> pointA = event.getTargetBlock().getLocation().get();
 			Utils.addPointOrCreateRegionOf(player.getUniqueId(), pointA, false);
@@ -93,9 +99,11 @@ public class PlayerInteractBlockListener
 	}
 
 	@Listener
-	public void onPlayerRightClickBlock(InteractBlockEvent.Secondary event, @First Player player)
+	public void onPlayerRightClickBlock(InteractBlockEvent.Secondary event, @Root Player player)
 	{
-		if (player.hasPermission("inspector.region.use") && player.getItemInHand().isPresent() && player.getItemInHand().get().getItem().getName().equals((String) Utils.getConfigValue("inspector.select.tool")))
+		if (player.hasPermission("inspector.region.use") && player.getItemInHand(HandTypes.MAIN_HAND).isPresent() 
+			&& player.getItemInHand(HandTypes.MAIN_HAND).get().getItem().getName()
+				.equals((String) Utils.getConfigValue("inspector.select.tool")))
 		{
 			Location<World> pointB = event.getTargetBlock().getLocation().get();
 			Utils.addPointOrCreateRegionOf(player.getUniqueId(), pointB, true);

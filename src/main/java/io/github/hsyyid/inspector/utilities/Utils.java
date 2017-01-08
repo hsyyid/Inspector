@@ -1,15 +1,18 @@
 package io.github.hsyyid.inspector.utilities;
 
-import io.github.hsyyid.inspector.Inspector;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import io.github.hsyyid.inspector.Inspector;
 
 public class Utils
 {
@@ -21,7 +24,7 @@ public class Utils
 
 			if (blockInfo.getLocation().getBlock() != blockInfo.getOldBlockSnapshot().getState())
 			{
-				blockInfo.getLocation().setBlock(blockInfo.getOldBlockSnapshot().getState());
+				blockInfo.getLocation().setBlock(blockInfo.getOldBlockSnapshot().getState(), Cause.of(NamedCause.source(Inspector.instance().getPluginContainer())));
 			}
 		}
 		

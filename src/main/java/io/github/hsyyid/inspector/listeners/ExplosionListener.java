@@ -17,7 +17,7 @@ import java.util.TimeZone;
 public class ExplosionListener
 {
 	@Listener
-	public void onExplosion(ExplosionEvent.Detonate event, @First Player player)
+	public void onExplosion(ExplosionEvent.Post event, @First Player player)
 	{
 		for (Transaction<BlockSnapshot> transaction : event.getTransactions())
 		{
@@ -27,9 +27,7 @@ public class ExplosionListener
 			format.setTimeZone(TimeZone.getTimeZone("GMT"));
 			String timeInGMT = format.format(cal.getTime());
 
-			Inspector.instance().getDatabaseManager().updateBlockInformation(transactionLocation.getBlockX(), transactionLocation.getBlockY(), 
-				transactionLocation.getBlockZ(), transactionLocation.getExtent().getUniqueId(), player.getUniqueId(), player.getName(), timeInGMT,
-				transaction.getOriginal(), transaction.getFinal());
+			Inspector.instance().getDatabaseManager().updateBlockInformation(transactionLocation.getBlockX(), transactionLocation.getBlockY(), transactionLocation.getBlockZ(), transactionLocation.getExtent().getUniqueId(), player.getUniqueId(), player.getName(), timeInGMT, transaction.getOriginal(), transaction.getFinal());
 		}
 	}
 }

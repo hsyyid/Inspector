@@ -73,46 +73,50 @@ public class DatabaseManager
 
 	public void updateBlockInformation(int x, int y, int z, UUID worldUUID, UUID playerUUID, String playerName, String time, BlockSnapshot oldBlockSnapshot, BlockSnapshot newBlockSnapshot)
 	{
-		try
-		{
-			Connection c = this.getDatabaseConnection();
-			Statement stmt = c.createStatement();
+		Sponge.getScheduler().createTaskBuilder().async().execute(() -> {
+			try
+			{
+				Connection c = this.getDatabaseConnection();
+				Statement stmt = c.createStatement();
 
-			String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + "(LOCATION      TEXT       NOT NULL," + " PLAYERID      INT        NOT NULL," + " TIME          TEXT       NOT NULL," + " OLDBLOCK      TEXT       NOT NULL," + " NEWBLOCK      TEXT       NOT NULL)";
-			stmt.executeUpdate(sql);
+				String sql = "CREATE TABLE IF NOT EXISTS BLOCKINFO" + "(LOCATION      TEXT       NOT NULL," + " PLAYERID      INT        NOT NULL," + " TIME          TEXT       NOT NULL," + " OLDBLOCK      TEXT       NOT NULL," + " NEWBLOCK      TEXT       NOT NULL)";
+				stmt.executeUpdate(sql);
 
-			Map<?, ?> serializedBlock = oldBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
-			String oldBlock = this.gson.toJson(serializedBlock);
-			serializedBlock = newBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
-			String newBlock = this.gson.toJson(serializedBlock);
+				Map<?, ?> serializedBlock = oldBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
+				String oldBlock = this.gson.toJson(serializedBlock);
+				serializedBlock = newBlockSnapshot.toContainer().getMap(DataQuery.of()).get();
+				String newBlock = this.gson.toJson(serializedBlock);
 
-			sql = "INSERT INTO BLOCKINFO (LOCATION,PLAYERID,TIME,OLDBLOCK,NEWBLOCK) " + "VALUES ('" + x + ";" + y + ";" + z + ";" + worldUUID.toString() + "'," + this.getPlayerId(playerUUID) + ",'" + time + "','" + oldBlock + "','" + newBlock + "');";
-			stmt.executeUpdate(sql);
+				sql = "INSERT INTO BLOCKINFO (LOCATION,PLAYERID,TIME,OLDBLOCK,NEWBLOCK) " + "VALUES ('" + x + ";" + y + ";" + z + ";" + worldUUID.toString() + "'," + this.getPlayerId(playerUUID) + ",'" + time + "','" + oldBlock + "','" + newBlock + "');";
+				stmt.executeUpdate(sql);
 
-			stmt.close();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
+				stmt.close();
+			}
+			catch (SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}).submit(Inspector.instance());
 	}
 
 	public void addPlayerToDatabase(Player player)
 	{
-		try
-		{
-			Connection c = this.getDatabaseConnection();
-			Statement stmt = c.createStatement();
+		Sponge.getScheduler().createTaskBuilder().async().execute(() -> {
+			try
+			{
+				Connection c = this.getDatabaseConnection();
+				Statement stmt = c.createStatement();
 
-			String sql = "INSERT INTO PLAYERS (UUID, NAME) " + "VALUES ('" + player.getUniqueId().toString() + "','" + player.getName() + "');";
-			stmt.executeUpdate(sql);
+				String sql = "INSERT INTO PLAYERS (UUID, NAME) " + "VALUES ('" + player.getUniqueId().toString() + "','" + player.getName() + "');";
+				stmt.executeUpdate(sql);
 
-			stmt.close();
-		}
-		catch (SQLException e)
-		{
-			e.printStackTrace();
-		}
+				stmt.close();
+			}
+			catch (SQLException e)
+			{
+				e.printStackTrace();
+			}
+		}).submit(Inspector.instance());
 	}
 
 	public boolean isPlayerInDatabase(Player player)
@@ -125,7 +129,7 @@ public class DatabaseManager
 			Statement stmt = c.createStatement();
 			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS PLAYERS" + "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," + " UUID          TEXT       NOT NULL," + " NAME          TEXT       NOT NULL)");
 			stmt.close();
-			
+
 			PreparedStatement preparedStmt = c.prepareStatement("SELECT count(*) from PLAYERS WHERE uuid=?");
 			preparedStmt.setString(1, player.getUniqueId().toString());
 			ResultSet rs = preparedStmt.executeQuery();
