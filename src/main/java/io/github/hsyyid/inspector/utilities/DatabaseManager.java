@@ -127,7 +127,7 @@ public class DatabaseManager
 		{
 			Connection c = this.getDatabaseConnection();
 			Statement stmt = c.createStatement();
-			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS PLAYERS" + "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," + " UUID          TEXT       NOT NULL," + " NAME          TEXT       NOT NULL)");
+			stmt.executeUpdate("CREATE TABLE IF NOT EXISTS PLAYERS" + "(ID INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL," + " UUID          TEXT       NOT NULL," + " NAME          TEXT       NOT NULL)");
 			stmt.close();
 
 			PreparedStatement preparedStmt = c.prepareStatement("SELECT count(*) from PLAYERS WHERE uuid=?");
