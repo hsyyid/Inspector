@@ -2,12 +2,9 @@ package io.github.hsyyid.inspector;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+import io.github.hsyyid.inspector.cmdexecutors.reloadInspectorExecutor;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.args.GenericArguments;
@@ -15,6 +12,8 @@ import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GameStartedServerEvent;
+import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
@@ -37,6 +36,7 @@ import me.flibio.updatifier.Updatifier;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
+import org.spongepowered.api.world.World;
 
 @Updatifier(repoName = "Inspector", repoOwner = "hsyyid", version = "v" + PluginInfo.VERSION)
 @Plugin(id = PluginInfo.ID, name = PluginInfo.NAME, version = PluginInfo.VERSION, description = PluginInfo.DESCRIPTION, dependencies = @Dependency(id = "Updatifier", version = "1.0", optional = true) )
@@ -86,7 +86,7 @@ public class Inspector
 	private ConfigurationLoader<CommentedConfigurationNode> confManager;
 
 	@Listener
-	public void onGameInit(GameInitializationEvent event)
+	public void onGameInit(GameStartedServerEvent event)
 	{
 		getLogger().info("Inspector loading...");
 		instance = this;
@@ -94,21 +94,7 @@ public class Inspector
 
 		try
 		{
-			if (!dConfig.exists())
-			{
-				dConfig.createNewFile();
-				config = confManager.load();
-				config.getNode("database", "mysql", "enabled").setValue(false);
-				config.getNode("database", "mysql", "host").setValue("localhost");
-				config.getNode("database", "mysql", "port").setValue("8080");
-				config.getNode("database", "mysql", "username").setValue("username");
-				config.getNode("database", "mysql", "password").setValue("pass");
-				config.getNode("database", "mysql", "database").setValue("Inspector");
-				config.getNode("inspector", "select", "tool").setValue("minecraft:diamond_hoe");
-				confManager.save(config);
-			}
-			configurationManager = confManager;
-			config = confManager.load();
+            loadConfig();
 
 		}
 		catch (IOException exception)
@@ -117,6 +103,12 @@ public class Inspector
 		}
 
 		HashMap<List<String>, CommandSpec> inspectorSubcommands = new HashMap<List<String>, CommandSpec>();
+
+        inspectorSubcommands.put(Arrays.asList("reload"), CommandSpec.builder()
+                .description(Text.of("reload Inspector"))
+                .permission("inspector.reload")
+                .executor(new reloadInspectorExecutor())
+                .build());
 
 		inspectorSubcommands.put(Arrays.asList("toggle"), CommandSpec.builder()
 			.description(Text.of("Toggle Inspector Command"))
@@ -147,14 +139,37 @@ public class Inspector
 		Sponge.getEventManager().registerListeners(this, new PlayerJoinListener());
 
 		getLogger().info("-----------------------------");
-		getLogger().info("Inspector was made by HassanS6000!");
+		getLogger().info("Inspector was created by HassanS6000!");
+        getLogger().info("This version was improved by Tollainmear!");
 		getLogger().info("Please post all errors on the Sponge Thread or on GitHub!");
 		getLogger().info("Have fun, and enjoy! :D");
 		getLogger().info("-----------------------------");
 		getLogger().info("Inspector loaded!");
 	}
 
-	public static ConfigurationLoader<CommentedConfigurationNode> getConfigManager()
+    public void loadConfig() throws IOException {
+        if (!dConfig.exists())
+        {
+            dConfig.createNewFile();
+            config = confManager.load();
+            config.getNode("database", "mysql", "enabled").setValue(false);
+            config.getNode("database", "mysql", "host").setValue("localhost");
+            config.getNode("database", "mysql", "port").setValue("8080");
+            config.getNode("database", "mysql", "username").setValue("username");
+            config.getNode("database", "mysql", "password").setValue("pass");
+            config.getNode("database", "mysql", "database").setValue("Inspector");
+            config.getNode("inspector", "select", "tool").setValue("minecraft:diamond_hoe");
+            Iterator<World> ite = Sponge.getServer().getWorlds().iterator();
+            while (ite.hasNext()){
+                config.getNode("worlds").getNode(ite.next().getName()).setValue(false);
+            }
+            confManager.save(config);
+        }
+        configurationManager = confManager;
+        config = confManager.load();
+    }
+
+    public static ConfigurationLoader<CommentedConfigurationNode> getConfigManager()
 	{
 		return configurationManager;
 	}
