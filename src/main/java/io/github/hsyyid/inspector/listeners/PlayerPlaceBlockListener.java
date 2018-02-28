@@ -27,11 +27,12 @@ public class PlayerPlaceBlockListener {
 		while(var3.hasNext()) {
 			Transaction<BlockSnapshot> transaction = (Transaction)var3.next();
 			Location<World> transactionLocation = (Location)((BlockSnapshot)transaction.getFinal()).getLocation().get();
-			Calendar cal = Calendar.getInstance();
-			SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
-			format.setTimeZone(TimeZone.getTimeZone("GMT"));
-			String timeInGMT = format.format(cal.getTime());
-			Inspector.instance().getDatabaseManager().updateBlockInformation(transactionLocation.getBlockX(), transactionLocation.getBlockY(), transactionLocation.getBlockZ(), ((World)transactionLocation.getExtent()).getUniqueId(), player.getUniqueId(), player.getName(), timeInGMT, (BlockSnapshot)transaction.getOriginal(), (BlockSnapshot)transaction.getFinal());
+//			Calendar cal = Calendar.getInstance();
+//			SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+//			format.setTimeZone(TimeZone.getTimeZone("GMT"));
+//			String timeInGMT = format.format(cal.getTime());
+			String time = Calendar.getInstance().getTime().getTime()+"";
+			Inspector.instance().getDatabaseManager().updateBlockInformation(transactionLocation.getBlockX(), transactionLocation.getBlockY(), transactionLocation.getBlockZ(), ((World)transactionLocation.getExtent()).getUniqueId(), player.getUniqueId(), player.getName(), time, (BlockSnapshot)transaction.getOriginal(), (BlockSnapshot)transaction.getFinal());
 		}
 
 	}

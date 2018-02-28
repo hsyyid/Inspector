@@ -4,10 +4,11 @@ import com.google.common.collect.Lists;
 import io.github.hsyyid.inspector.Inspector;
 import io.github.hsyyid.inspector.utilities.BlockInformation;
 import io.github.hsyyid.inspector.utilities.Utils;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.data.type.HandTypes;
@@ -60,7 +61,16 @@ public class PlayerInteractBlockListener {
 					BlockSnapshot newBlock = blockInfo.getNewBlockSnapshot();
 					String playerName = blockInfo.getPlayerName();
 					UUID playerUUID = blockInfo.getPlayerUUID();
-					String timeEdited = blockInfo.getTimeEdited();
+//					String timeEdited = blockInfo.getTimeEdited();
+
+
+					Calendar cal = Calendar.getInstance();
+					SimpleDateFormat format = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+					format.setTimeZone(TimeZone.getTimeZone("GMT"));
+					String time = blockInfo.getTimeEdited();
+					String timeEdited = format.format(new Date(Long.parseLong(time)));
+
+
 					Text blockChange = Text.builder().append(new Text[]{Text.of(new Object[]{TextColors.GRAY, "Time Edited: ", TextColors.GOLD, timeEdited, "\n"})}).append(new Text[]{Text.builder().append(new Text[]{Text.of(new Object[]{TextColors.GRAY, "Player Edited: ", TextColors.GOLD, TextStyles.UNDERLINE, playerName, "\n"})}).onHover(TextActions.showText(Text.of(new Object[]{TextColors.GRAY, "UUID: ", TextColors.GOLD, playerUUID.toString()}))).build()}).append(new Text[]{Text.builder().append(new Text[]{Text.of(new Object[]{TextColors.GRAY, "Old Block ID: ", TextColors.GOLD, TextStyles.UNDERLINE, oldBlock.getState().getType().getTranslation().get(), "\n"})}).onHover(TextActions.showText(Text.of(new Object[]{TextColors.GRAY, "ID: ", TextColors.GOLD, oldBlock.getState().getType().getId()}))).build()}).append(new Text[]{Text.builder().append(new Text[]{Text.of(new Object[]{TextColors.GRAY, "New Block ID: ", TextColors.GOLD, TextStyles.UNDERLINE, newBlock.getState().getType().getTranslation().get(), "\n"})}).onHover(TextActions.showText(Text.of(new Object[]{TextColors.GRAY, "ID: ", TextColors.GOLD, newBlock.getState().getType().getId()}))).build()}).build();
 					blockChanges.add(blockChange);
 				}

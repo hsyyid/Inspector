@@ -2,6 +2,7 @@ package io.github.hsyyid.inspector.listeners;
 
 import io.github.hsyyid.inspector.Inspector;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.network.ClientConnectionEvent.Join;
 
 public class PlayerJoinListener {

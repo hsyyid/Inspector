@@ -268,4 +268,21 @@ public class DatabaseManager {
 
 		return (BlockSnapshot)BlockSnapshot.builder().build(container).get();
 	}
+
+	public void clearExpiredData(long timeThreshold) {
+		Inspector.instance().getLogger().info("Starting purge the expired data...");
+		Sponge.getScheduler().createTaskBuilder().async().execute(() -> {
+			try {
+				Connection c = this.getDatabaseConnection();
+				Statement stmt = c.createStatement();
+				String sql = "DELETE FROM BLOCKINFO WHERE TIME < "+ timeThreshold;
+				stmt.executeUpdate(sql);
+				stmt.close();
+			} catch (SQLException var5) {
+				var5.printStackTrace();
+			}
+
+		}).submit(Inspector.instance());
+		Inspector.instance().getLogger().info("clean up!");
+	}
 }
