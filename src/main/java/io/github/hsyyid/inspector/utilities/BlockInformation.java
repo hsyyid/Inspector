@@ -1,13 +1,11 @@
 package io.github.hsyyid.inspector.utilities;
 
+import java.util.UUID;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.UUID;
-
-public class BlockInformation
-{
+public class BlockInformation {
 	private Location<World> location;
 	private BlockSnapshot oldBlockSnapshot;
 	private BlockSnapshot newBlockSnapshot;
@@ -15,8 +13,7 @@ public class BlockInformation
 	private UUID playerUUID;
 	private String playerName;
 
-	public BlockInformation(Location<World> location, BlockSnapshot oldBlockSnapshot, BlockSnapshot newBlockSnapshot, String timeEdited, UUID playerUUID, String playerName)
-	{
+	public BlockInformation(Location<World> location, BlockSnapshot oldBlockSnapshot, BlockSnapshot newBlockSnapshot, String timeEdited, UUID playerUUID, String playerName) {
 		this.location = location;
 		this.oldBlockSnapshot = oldBlockSnapshot;
 		this.newBlockSnapshot = newBlockSnapshot;
@@ -25,33 +22,27 @@ public class BlockInformation
 		this.playerName = playerName;
 	}
 
-	public Location<World> getLocation()
-	{
-		return location;
+	public Location<World> getLocation() {
+		return this.location;
 	}
 
-	public BlockSnapshot getOldBlockSnapshot()
-	{
-		return oldBlockSnapshot;
+	public BlockSnapshot getOldBlockSnapshot() {
+		return this.oldBlockSnapshot;
 	}
 
-	public BlockSnapshot getNewBlockSnapshot()
-	{
-		return newBlockSnapshot;
+	public BlockSnapshot getNewBlockSnapshot() {
+		return this.newBlockSnapshot;
 	}
 
-	public String getTimeEdited()
-	{
-		return timeEdited;
+	public String getTimeEdited() {
+		return this.timeEdited;
 	}
 
-	public UUID getPlayerUUID()
-	{
-		return playerUUID;
+	public UUID getPlayerUUID() {
+		return this.playerUUID;
 	}
 
-	public String getPlayerName()
-	{
-		return playerName;
+	public String getPlayerName() {
+		return this.playerName;
 	}
 }
